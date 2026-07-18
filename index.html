@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=1100, initial-scale=1.0, user-scalable=yes" />
   <meta name="theme-color" content="#0a0e0d" />
   <title>حاسبة الشحن والعمولة</title>
   <style>
@@ -44,11 +44,14 @@
 
     html {
       scroll-behavior: smooth;
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
+      min-width: 1100px;
       background:
         radial-gradient(ellipse 80% 60% at 85% -10%, rgba(18, 161, 115, .12), transparent 50%),
         radial-gradient(ellipse 60% 50% at 5% 8%, rgba(252, 211, 77, .05), transparent 40%),
@@ -57,7 +60,7 @@
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      overflow-x: auto;
     }
 
     button, input, select, textarea {
@@ -399,6 +402,28 @@
       box-shadow: 0 0 0 4px rgba(18, 161, 115, .15);
       background: rgba(0, 0, 0, .35);
     }
+
+    /* Clipboard paste icon overlaid on Product URL/Name/Price fields only --
+       scoped to .inputWithPaste so no other .input elsewhere is affected. */
+    .inputWithPaste { position: relative; }
+    .inputWithPaste .input { padding-inline-end: 34px; }
+    .pasteIconBtn {
+      position: absolute;
+      inset-inline-end: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--muted2);
+      border-radius: 8px;
+      padding: 0;
+    }
+    .pasteIconBtn:hover { color: var(--primary2); background: rgba(255, 255, 255, .06); }
 
     select {
       appearance: none;
@@ -1426,7 +1451,7 @@
       cursor: not-allowed;
     }
 
-    /* Excel Files Alert */
+    /* Shipping Data Alert (loading/error state for shipping rates) */
     .filesAlert {
       margin-top: 14px;
       padding: 18px;
@@ -2852,13 +2877,51 @@
 
     .orderFormGrid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
-      align-items: end;
     }
 
-    .orderFormGrid .wide2 { grid-column: span 2; }
-    .orderFormGrid .wide4 { grid-column: 1 / -1; }
+    .orderRow4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .orderRow6 {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    /* إخفاء المسميات في جميع صفوف المنتجات منعاً للتكرار */
+    #orderProductRowsContainer .orderRow6 .label {
+      display: none;
+    }
+
+    /* إظهار المسميات في الصف الأول فقط كعناوين للأعمدة */
+    #orderProductRowsContainer .orderRow6:first-child .label {
+      display: flex;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #555;
+    }
+
+    .orderRow2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .orderFormGrid input[readonly] {
+      background: rgba(0, 0, 0, .25);
+      color: var(--text);
+      text-align: center;
+      pointer-events: none;
+      cursor: default;
+      opacity: .75;
+    }
 
     .ordersToolbar {
       display: grid;
@@ -2868,7 +2931,14 @@
       margin-top: 4px;
     }
 
-    .ordersSearchWrap { min-width: 0; }
+    .ordersSearchWrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .ordersSearchWrap .label { margin-bottom: 0; }
 
     .ordersKanban {
       display: grid;
@@ -2932,8 +3002,14 @@
       align-items: center;
     }
 
+    .orderCustomerTitle {
+      justify-self: center;
+      text-align: center;
+    }
+
     .orderLastUpdatePill {
-      flex: 0 0 auto;
+      display: inline-block;
+      width: fit-content;
       padding: 5px 8px;
       border-radius: 999px;
       background: rgba(18, 161, 115, .10);
@@ -2942,7 +3018,28 @@
       font-size: 10px;
       font-weight: 900;
       white-space: nowrap;
+      justify-self: center;
+      text-align: center;
     }
+
+    .orderCardProductLinks {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .orderCardProductLink {
+      font-size: 10.5px;
+      color: var(--muted);
+      text-decoration: none;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .orderCardProductLink:hover { color: var(--primary2); text-decoration: underline; }
 
     .orderCardDetails {
       display: grid;
@@ -3052,14 +3149,164 @@
       overflow: hidden;
     }
 
+    /* Notes Inline Row */
+    .notesInlineRow {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(0, 0, 0, .18);
+      flex-wrap: wrap;
+    }
+
+    .notesInputGroup {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-width: 220px;
+      max-width: 320px;
+    }
+
+    .notesInputGroup .input {
+      min-height: 36px;
+      font-size: 12.5px;
+      padding: 6px 10px;
+      flex: 1;
+    }
+
+    .noteSendBtn {
+      flex-shrink: 0;
+      min-height: 36px;
+      padding: 6px 12px;
+      border: 1px solid var(--borderHover);
+      background: var(--primarySoft);
+      color: var(--primary2);
+      border-radius: 11px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+      transition: .16s ease;
+    }
+
+    .noteSendBtn:hover {
+      background: rgba(18, 161, 115, .22);
+      color: var(--primary3);
+    }
+
+    .noteTagsScroll {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+      max-height: 80px;
+      overflow-y: auto;
+      padding: 2px 0;
+      align-content: flex-start;
+    }
+
+    .noteTagsScroll::-webkit-scrollbar { width: 4px; }
+    .noteTagsScroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .noteTag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 6px 3px 5px;
+      background: rgba(18, 161, 115, .10);
+      border: 1px solid var(--borderHover);
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--text);
+      white-space: nowrap;
+      max-width: 210px;
+      flex-shrink: 0;
+    }
+
+    .noteTagText {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 120px;
+      display: inline-block;
+    }
+
+    .noteTagTime {
+      color: var(--muted2);
+      font-size: 9.5px;
+      flex-shrink: 0;
+    }
+
+    .noteTagDelete {
+      width: 14px;
+      height: 14px;
+      border: 0;
+      background: transparent;
+      color: var(--muted2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: color .12s ease;
+      line-height: 1;
+    }
+
+    .noteTagDelete:hover { color: var(--danger); }
+
+    /* Card note tags display */
+    .orderNoteTagsWrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 4px 0;
+    }
+
+    .orderNoteTagCard {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      background: rgba(18, 161, 115, .08);
+      border: 1px solid var(--borderHover);
+      border-radius: 12px;
+      font-size: 10px;
+      color: var(--muted);
+      max-width: 180px;
+    }
+
+    .orderNoteTagCard .noteTagText {
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    /* Product row label */
+    .productRowLabel {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--primary2);
+      padding: 3px 0;
+      opacity: .85;
+    }
+
     .orderCardActions {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 6px;
+      margin-top: 10px;
     }
 
     .orderCardActions .smallBtn {
-      min-height: 30px;
+      min-height: 32px;
       padding: 5px 7px;
       font-size: 10.5px;
       flex: auto;
@@ -3083,43 +3330,20 @@
       line-height: 1.6;
     }
 
-    .orderQuickLinks {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-    }
-
-    .orderQuickLinks a,
-    .orderQuickLinks button {
-      min-height: 30px;
-      padding: 5px 7px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, .03);
-      color: var(--primary2);
-      font-size: 10.5px;
-      font-weight: 900;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-
     @media (max-width: 1000px) {
       .ordersTopRow { grid-template-columns: 1fr; }
       .ordersAlertSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .orderFormGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .orderFormGrid .wide2 { grid-column: span 2; }
+      .orderRow4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .orderRow6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media (max-width: 640px) {
       .appTabs { margin-top: -4px; }
       .tabBtn { min-height: 40px; font-size: 12px; }
       .ordersAlertSummary { grid-template-columns: 1fr; }
-      .orderFormGrid { grid-template-columns: 1fr; gap: 8px; }
-      .orderFormGrid .wide2,
-      .orderFormGrid .wide4 { grid-column: auto; }
+      .orderRow4,
+      .orderRow6,
+      .orderRow2 { grid-template-columns: 1fr; gap: 8px; }
       .ordersToolbar { grid-template-columns: 1fr; }
       .ordersKanban { grid-template-columns: repeat(5, minmax(226px, 226px)); }
       .kanbanColumn { min-width: 226px; }
@@ -3127,6 +3351,155 @@
 
 
 
+
+    /* Shipment pills — Kanban card multi-link view */
+    .shipmentPillsRow {
+      display: grid;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .shipmentPill {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: 9px;
+      background: rgba(0, 0, 0, .22);
+      border: 1px solid var(--border);
+      font-size: 10.5px;
+      overflow: hidden;
+    }
+
+    .shipmentPill a, .shipmentPill .shipNoLink {
+      color: var(--primary2);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 800;
+      min-width: 0;
+      text-align: left;
+      width: 100%;
+      display: block;
+    }
+
+    .shipmentPill a:hover { text-decoration: underline; }
+    .shipmentPill .shipNoLink { color: var(--muted); cursor: default; }
+
+    .shipStatusChip {
+      flex-shrink: 0;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--primarySoft);
+      color: var(--primary2);
+      font-size: 10px;
+      font-weight: 900;
+      border: 1px solid var(--borderHover);
+      white-space: nowrap;
+    }
+
+    .shipStatusDropdown {
+      width: auto;
+      min-width: 95px;
+      max-width: 120px;
+      min-height: 22px;
+      padding: 2px 20px 2px 6px;
+      border: 1px solid var(--borderHover);
+      background: var(--primarySoft);
+      color: var(--primary2);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 900;
+      appearance: none;
+      -webkit-appearance: none;
+      text-align: center;
+      text-align-last: center;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--primary2) 50%),
+        linear-gradient(135deg, var(--primary2) 50%, transparent 50%);
+      background-position: calc(100% - 7px) 50%, calc(100% - 4px) 50%;
+      background-size: 3px 3px, 3px 3px;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .shipStatusDropdown option {
+      background: var(--cardSolid);
+      color: var(--text);
+    }
+
+    .shipStatusDropdown:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(18, 161, 115, .15);
+    }
+
+    /* Shipment form boxes — Edit mode */
+    .shipmentsSection {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, .12);
+    }
+
+    .shipmentsSectionHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .shipmentsSectionTitle {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--primary2);
+    }
+
+    .shipmentsContainer {
+      display: grid;
+      gap: 10px;
+    }
+
+    .shipmentFormBox {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--borderHover);
+      background: rgba(18, 161, 115, .05);
+      display: grid;
+      gap: 9px;
+    }
+
+    .shipmentFormBoxHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .shipmentFormBoxTitle {
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--primary2);
+    }
+
+    .shipmentFormBoxGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .shipmentFormBoxGrid .wide2 { grid-column: span 2; }
+
+    @media (max-width: 640px) {
+      .shipmentFormBoxGrid { grid-template-columns: 1fr; }
+      .shipmentFormBoxGrid .wide2 { grid-column: auto; }
+    }
 
     /* =========================================================
        Order Type Gate + Single Site Product Rows
@@ -3510,39 +3883,6 @@
       border-radius: 10px;
     }
 
-    .orderProductsList {
-      display: grid;
-      gap: 7px;
-      margin-top: 8px;
-    }
-
-    .orderProductRow {
-      padding: 7px 8px;
-      border: 1px solid var(--border);
-      background: rgba(0, 0, 0, .20);
-      border-radius: 10px;
-      font-size: 10.8px;
-      line-height: 1.5;
-      display: grid;
-      gap: 2px;
-    }
-
-    .orderProductRow b {
-      color: var(--text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .orderProductRow a {
-      color: var(--primary2);
-      text-decoration: none;
-      border-bottom: 1px dashed rgba(22, 192, 138, .45);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
     @media (max-width: 700px) {
       .singleSiteExtraItem { grid-template-columns: 1fr 30px; }
     }
@@ -3791,7 +4131,7 @@
       <button class="smallBtn" type="button" onclick="resetOrderTypeChoice()">تغيير نوع الطلب</button>
     </div>
 
-    <div id="topFilesBanner" class="topFilesBanner hidden" onclick="openSettingsModal()">
+    <div id="topFilesBanner" class="topFilesBanner hidden" onclick="retryLoadShippingRates()">
       <div class="topFilesBannerIcon">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -3800,8 +4140,8 @@
         </svg>
       </div>
       <div class="topFilesBannerText">
-        <b>تنبيه: ملفات الأسعار غير مرفوعة</b>
-        <span class="topBannerMsg">يلزم رفع ملفي الإكسل لعرض أسعار الشحن غير المباشر</span>
+        <b>تنبيه: تعذر تحميل أسعار الشحن</b>
+        <span class="topBannerMsg">اضغط هنا لإعادة تحميل أسعار الشحن من قاعدة البيانات</span>
       </div>
       <span class="topFilesBannerArrow">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -3917,6 +4257,7 @@
               رسالة واتساب
             </h2>
             <button class="smallBtn dark" id="copyWa" style="flex: 0 0 auto; padding: 7px 14px;">نسخ الرسالة</button>
+            <button class="smallBtn dark" id="openWa" style="flex: 0 0 auto; padding: 7px 14px;">فتح واتساب</button>
           </div>
           <pre class="whatsappContent" id="waText"></pre>
         </section>
@@ -3950,72 +4291,6 @@
           <div class="ordersAlertSummary" id="ordersAlertSummary"></div>
         </div>
 
-        <section class="orderFormPanel">
-          <div class="orderFormHeader">
-            <h3 class="orderFormTitle" id="orderFormTitle">إضافة طلب جديد</h3>
-            <button class="smallBtn" id="resetOrderForm" type="button" style="flex: 0 0 auto;">تفريغ النموذج</button>
-          </div>
-          <input type="hidden" id="editingOrderId" value="">
-          <div class="orderFormGrid">
-            <div>
-              <label class="label">اسم العميل</label>
-              <input class="input" id="orderCustomer" type="text" placeholder="مثال: محمد">
-            </div>
-            <div>
-              <label class="label">عنوان مختصر للعميل</label>
-              <input class="input" id="orderCustomerTitle" type="text" placeholder="مثال: طلب نايك / قطع كامارو">
-            </div>
-            <div>
-              <label class="label">رقم طلب الموقع</label>
-              <input class="input" id="sellerOrderNumber" type="text" placeholder="#12345">
-            </div>
-            <div>
-              <label class="label">الحالة</label>
-              <select id="orderStatus"></select>
-            </div>
-
-            <div class="wide2">
-              <label class="label">رابط واتساب العميل</label>
-              <input class="input ltr" id="orderWhatsapp" type="url" placeholder="https://wa.me/9665...">
-            </div>
-            <div class="wide2">
-              <label class="label">رابط المنتج</label>
-              <input class="input ltr" id="orderProductLink" type="url" placeholder="https://...">
-            </div>
-
-            <div>
-              <label class="label">رقم التتبع المحلي</label>
-              <input class="input" id="orderLocalTracking" type="text" placeholder="داخل أمريكا">
-            </div>
-            <div>
-              <label class="label">رابط التتبع الدولي</label>
-              <input class="input ltr" id="orderIntlTracking" type="url" placeholder="https://...">
-            </div>
-            <div>
-              <label class="label">شركة الشحن</label>
-              <input class="input" id="orderCarrier" type="text" placeholder="Aramex / DHL / FedEx">
-            </div>
-            <div>
-              <label class="label">تاريخ الشراء</label>
-              <input class="input" id="orderPurchaseDate" type="date">
-            </div>
-
-            <div>
-              <label class="label">آخر تحديث للحالة</label>
-              <input class="input" id="orderStatusUpdatedAt" type="date">
-            </div>
-            <div class="wide2">
-              <label class="label">ملاحظات</label>
-              <input class="input" id="orderNotes" type="text" placeholder="مثال: ينتظر البائع، يحتاج فاتورة، العميل مستعجل...">
-            </div>
-
-            <div class="wide4 buttonRow" style="margin-top: 2px;">
-              <button class="btn primary" id="saveOrderBtn" type="button" style="flex: 1;">حفظ الطلب</button>
-              <button class="btn" id="fillOrderFromCalcBtn" type="button" style="flex: 1;">تعبئة من أول منتج بالحاسبة</button>
-            </div>
-          </div>
-        </section>
-
         <div class="ordersToolbar">
           <div class="ordersSearchWrap">
             <label class="label">بحث في الطلبات</label>
@@ -4025,6 +4300,56 @@
         </div>
 
         <div class="ordersKanban" id="ordersKanban" aria-label="لوحة متابعة الطلبات"></div>
+
+        <section class="orderFormPanel">
+          <div class="orderFormHeader">
+            <h3 class="orderFormTitle" id="orderFormTitle">إضافة طلب جديد</h3>
+            <button class="smallBtn" id="resetOrderForm" type="button" style="flex: 0 0 auto;">تفريغ النموذج</button>
+          </div>
+          <input type="hidden" id="editingOrderId" value="">
+          <div class="orderFormGrid">
+            <!-- Row 1: 4 basic fields -->
+            <div class="orderRow4">
+              <div>
+                <label class="label">اسم العميل</label>
+                <input class="input" id="orderCustomer" type="text" placeholder="مثال: محمد">
+              </div>
+              <div>
+                <label class="label">العنوان الوطني</label>
+                <input class="input" id="orderCustomerTitle" type="text" placeholder="مثال: 12345678901234">
+              </div>
+              <div>
+                <label class="label">رابط واتساب العميل</label>
+                <input class="input ltr" id="orderWhatsapp" type="url" placeholder="https://wa.me/966...">
+              </div>
+              <div>
+                <label class="label">تاريخ الشراء</label>
+                <input class="input ltr" id="orderPurchaseDate" type="date" readonly>
+              </div>
+            </div>
+
+            <!-- Row 2: dynamic product rows (injected by JS) -->
+            <div id="orderProductRowsContainer"></div>
+
+            <!-- Row 3: notes inline -->
+            <div class="notesInlineRow">
+              <div class="sectionIcon" style="flex-shrink:0; align-self:center;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              </div>
+              <div class="notesInputGroup">
+                <input class="input" id="orderNoteInput" type="text" placeholder="أضف ملاحظة...">
+                <button type="button" class="noteSendBtn" id="addNoteBtn">إرسال</button>
+              </div>
+              <div class="noteTagsScroll" id="noteTagsContainer"></div>
+            </div>
+
+            <div class="buttonRow" style="margin-top: 2px;">
+              <button class="btn primary" id="saveOrderBtn" type="button" style="flex: 1;">حفظ الطلب</button>
+              <button class="btn" id="fillOrderFromCalcBtn" type="button" style="flex: 1;">تعبئة المنتجات من الحاسبة</button>
+            </div>
+          </div>
+
+        </section>
       </div>
     </section>
   </main>
@@ -4056,35 +4381,40 @@
         </div>
 
         <div class="sheetSection">
-          <h3 class="sheetSectionTitle">📊 ملف أسعار MyUS</h3>
-          <input id="myusRateFile" class="fileInputHidden" type="file" accept=".xlsx,.xls,.csv">
-          <label class="uploadDropZoneLabel uploadDropZone" for="myusRateFile">
-            <span class="uploadDropIcon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </span>
-            <span class="uploadDropText"><b>اختر ملف MyUS واحد</b><small>Excel أو CSV — سيتم استبدال الملف السابق لنفس الشركة</small></span>
-          </label>
-          <div class="fileStatus" id="myusFileStatus">⚠️ لم يتم رفع ملف بعد — يلزم رفع الملف لعرض أسعار MyUS</div>
+          <h3 class="sheetSectionTitle">📊 مصدر أسعار الشحن</h3>
+          <div class="fileStatus" id="myusFileStatus">⏳ جاري التحميل من قاعدة البيانات...</div>
+          <div class="fileStatus" id="shopshipFileStatus">⏳ جاري التحميل من قاعدة البيانات...</div>
+          <button class="btn" id="retryShippingRatesBtn" style="width: 100%; margin-top: 8px;" onclick="retryLoadShippingRates()">🔄 إعادة تحميل الأسعار</button>
+          <div class="fileStatus" id="shippingHealthStatus" style="margin-top: 6px;"></div>
         </div>
 
-        <div class="sheetSection">
-          <h3 class="sheetSectionTitle">📦 ملف أسعار Shop & Ship</h3>
-          <input id="shopshipRateFile" class="fileInputHidden" type="file" accept=".xlsx,.xls,.csv">
-          <label class="uploadDropZoneLabel uploadDropZone" for="shopshipRateFile">
-            <span class="uploadDropIcon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </span>
-            <span class="uploadDropText"><b>اختر ملف Shop & Ship واحد</b><small>Excel أو CSV — سيتم استبدال الملف السابق لنفس الشركة</small></span>
-          </label>
-          <div class="fileStatus" id="shopshipFileStatus">⚠️ لم يتم رفع ملف بعد — يلزم رفع الملف لعرض أسعار Shop & Ship</div>
+        <!--
+          Emergency Import -- Developer Mode only, hidden by default (see
+          the `hidden` class below and renderEmergencyImportVisibility()).
+          Never shown to normal users. Loads legacy/excel_import.js via a
+          dynamic import() only when actually used -- it is never fetched
+          during normal page load.
+        -->
+        <div class="sheetSection hidden" id="emergencyImportSection">
+          <h3 class="sheetSectionTitle">🛑 استيراد طارئ (Developer Mode)</h3>
+          <div class="warning">هذه الميزة للطوارئ فقط عند تعذر الوصول لقاعدة البيانات ولا توجد بيانات محفوظة محلياً. لا تُستخدم في التشغيل العادي.</div>
+
+          <div class="field">
+            <label class="label">ملف Excel/CSV بصيغة الأسعار القديمة (يملأ كل ناقلي MyUS أو Shop &amp; Ship دفعة واحدة)</label>
+            <select id="emergencyImportLegacyType" class="input">
+              <option value="myus">MyUS (Budget/Aramex/FedEx/DHL)</option>
+              <option value="shopship">Shop &amp; Ship</option>
+            </select>
+            <input id="emergencyImportLegacyFile" class="input" type="file" accept=".xlsx,.xls,.csv" style="margin-top: 6px;">
+          </div>
+
+          <div class="field">
+            <label class="label">أو ملف JSON لناقل واحد فقط</label>
+            <select id="emergencyImportJsonCarrier" class="input"></select>
+            <input id="emergencyImportJsonFile" class="input" type="file" accept=".json" style="margin-top: 6px;">
+          </div>
+
+          <div class="fileStatus" id="emergencyImportStatus">لم يتم استيراد أي ملف طارئ.</div>
         </div>
 
         <div class="sheetSection">
@@ -4113,12 +4443,11 @@
             <button class="btn" id="exportSavedWeights" style="flex: 1;">تصدير أوزان Excel</button>
             <label class="btn" for="savedWeightsImportFile" style="flex: 1; cursor: pointer;">استيراد أوزان Excel</label>
           </div>
-          <div class="fileStatus" id="savedWeightsFileStatus">الأوزان محفوظة داخل المتصفح، ويمكن تصديرها أو استيرادها كملف Excel.</div>
+          <div class="fileStatus" id="savedWeightsFileStatus">الأوزان محفوظة في قاعدة البيانات، ويمكن تصديرها أو استيرادها كملف Excel.</div>
         </div>
 
         <div class="buttonRow" style="flex-direction: column; gap: 10px; margin-top: 12px;">
           <button class="btn primary" id="saveSettings" style="width: 100%;">حفظ الإعدادات</button>
-          <button class="btn" id="clearRateFiles" style="width: 100%;">حذف ملفات الشحن المرفوعة</button>
           <button class="btn danger" id="resetAll" style="width: 100%;">مسح البيانات والبدء من جديد</button>
         </div>
       </div>
@@ -4129,8 +4458,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
-    // الأسعار تأتي فقط من ملفات Excel المرفوعة من قبل المستخدم
-    // لا توجد أسعار مدمجة - يجب رفع ملفي Excel للبدء
+    // أسعار الشحن تأتي فقط من جدول shipping_rates في Supabase عبر
+    // window.ShippingProvider (src/shipping/) -- لا ملفات Excel ولا أسعار
+    // مدمجة داخل الكود. راجع legacy/excel_import.js لآلية الاستيراد
+    // الطارئ (Developer Mode فقط).
 
     const MAX_LB = 50;
     const KG_TO_LB = 2.20462;
@@ -4356,12 +4687,18 @@
       }
     ];
 
+    // warehouseCode/carrierCode are the immutable Supabase identifiers each
+    // carrier resolves to (see shipping_rates schema / Phase 2 repository).
+    // "fedex" has always meant FedEx Priority on this site -- its own Excel
+    // header aliases (see the pre-Supabase importer) accepted "fedex priority"
+    // as a synonym and never "fedex economy" -- preserved here as-is.
     const CARRIERS = [
-      { id: 'budget', label: 'MyUS Budget', time: '8 - 14 يوم', source: 'myus' },
-      { id: 'aramex', label: 'MyUS Aramex', time: '3 - 5 أيام', source: 'myus' },
-      { id: 'fedex', label: 'MyUS FedEx', time: '3 - 6 أيام', source: 'myus' },
-      { id: 'dhl', label: 'MyUS DHL', time: '2 - 5 أيام', source: 'myus' },
-      { id: 'shopship', label: 'Shop & Ship', time: '4 - 7 أيام', source: 'shopship' },
+      { id: 'budget', label: 'MyUS Budget', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'BUDGET' },
+      { id: 'aramex', label: 'MyUS Aramex', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'ARAMEX' },
+      { id: 'fedex', label: 'MyUS FedEx', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_PRIORITY' },
+      { id: 'fedex_economy', label: 'MyUS FedEx Economy', time: '', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_ECONOMY' },
+      { id: 'dhl', label: 'MyUS DHL', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'DHL' },
+      { id: 'shopship', label: 'Shop & Ship', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER' },
     ];
 
     const CURRENCIES = [
@@ -4418,7 +4755,7 @@
     const todayInput = () => new Date().toISOString().slice(0, 10);
     const orderTemplate = () => ({
       id: uid(), customerName: '', customerShortTitle: '', orderNumber: '', sellerOrderNumber: '', sellerName: '',
-      whatsappLink: '', productLink: '', localTracking: '', intlTracking: '', carrier: '',
+      whatsappLink: '', productLink: '', productName: '', trackingNumber: '', localTracking: '', intlTracking: '', carrier: '',
       status: 'purchased', purchaseDate: todayInput(), statusUpdatedAt: todayInput(),
       notes: '', products: [], indirectShippingCustomer: 0, createdAt: new Date().toISOString()
     });
@@ -4431,7 +4768,7 @@
       try { loaded = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch (e) { }
       const base = loaded && Array.isArray(loaded.products) && loaded.products.length
         ? loaded
-        : { products: [productTemplate()], commissionConfig: { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION }, restrictionFeeConfig: defaultRestrictionFeeConfig(), rateTables: { myus: null, shopship: null }, savedWeights: [], orders: [], recentQuotes: [], currentQuoteId: uid(), carrierDiscount: DEFAULT_CARRIER_DISCOUNT, discountDefaultApplied: true, orderShippingMode: 'independent', orderType: '' };
+        : { products: [productTemplate()], commissionConfig: { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION }, restrictionFeeConfig: defaultRestrictionFeeConfig(), savedWeights: [], orders: [], recentQuotes: [], currentQuoteId: uid(), carrierDiscount: DEFAULT_CARRIER_DISCOUNT, discountDefaultApplied: true, orderShippingMode: 'independent', orderType: '' };
       base.orderType = ['singleSite', 'multiSite'].includes(base.orderType) ? base.orderType : '';
       base.orderShippingMode = base.orderShippingMode === 'myusCombined' ? 'myusCombined' : 'independent';
       base.commissionConfig = base.commissionConfig || { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION };
@@ -4442,15 +4779,9 @@
       } else {
         base.carrierDiscount = cleanCarrierDiscount(base.carrierDiscount ?? DEFAULT_CARRIER_DISCOUNT);
       }
-      base.rateTables = base.rateTables || { myus: null, shopship: null };
-      base.savedWeights = Array.isArray(base.savedWeights) ? base.savedWeights.map(item => ({
-        id: item.id || uid(),
-        name: item.name || 'منتج بدون اسم',
-        weight: item.weight || '',
-        weightUnit: item.weightUnit || 'lb',
-        source: item.source || item.link || item.note || '',
-        updatedAt: item.updatedAt || new Date().toISOString()
-      })) : [];
+      // Saved weights are Supabase-backed (see loadSavedWeights(), called
+      // from initApp()) -- this is just the pre-load placeholder.
+      base.savedWeights = [];
       base.orders = Array.isArray(base.orders) ? base.orders.map(item => {
         const merged = { ...orderTemplate(), ...item };
         if (!ORDER_STATUSES.some(s => s.id === merged.status)) merged.status = 'purchased';
@@ -4486,7 +4817,10 @@
       return base;
     }
 
-    function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); }
+    function saveState() {
+      const { orders, savedWeights, ...persisted } = state;
+      localStorage.setItem(storageKey, JSON.stringify(persisted));
+    }
 
     function getWeightLb(weight, unit = 'lb') {
       const w = parseFloat(weight) || 0;
@@ -4500,22 +4834,16 @@
       return unit === 'kg' ? w : w / KG_TO_LB;
     }
 
-    function mergeMyusRates() {
-      // الأسعار تأتي فقط من ملف Excel المرفوع
-      return state.rateTables?.myus?.rates || {};
-    }
-
-    function mergeShopshipRates() {
-      // الأسعار تأتي فقط من ملف Excel المرفوع
-      return { ...(state.rateTables?.shopship?.rates || {}) };
-    }
-
+    // isMyusUploaded()/isShopshipUploaded() keep their historical names (many
+    // render call sites use them as readiness gates) but now report whether
+    // the Shipping Service has successfully cached data from Supabase for
+    // that provider, instead of whether a file was uploaded in-browser.
     function isMyusUploaded() {
-      return !!(state.rateTables?.myus?.rates && Object.keys(state.rateTables.myus.rates).length > 0);
+      return CARRIERS.filter(c => c.source === 'myus').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
     }
 
     function isShopshipUploaded() {
-      return !!(state.rateTables?.shopship?.rates && Object.keys(state.rateTables.shopship.rates).length > 0);
+      return CARRIERS.filter(c => c.source === 'shopship').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
     }
 
     function areAllFilesUploaded() {
@@ -4523,36 +4851,28 @@
       return isMyusUploaded() && isShopshipUploaded();
     }
 
-    function availableLb(table, desiredLb, carrierId) {
-      const keys = Object.keys(table).map(Number).filter(n => Number.isFinite(n)).sort((a, b) => a - b);
-      const validKeys = carrierId
-        ? keys.filter(k => table[k] && table[k][carrierId] != null && table[k][carrierId] !== '')
-        : keys.filter(k => table[k] != null && table[k] !== '');
-      if (!validKeys.length) return { lb: 0, capped: false, maxLb: 0 };
-      const next = validKeys.find(k => k >= desiredLb);
-      const lb = next || validKeys[validKeys.length - 1];
-      return { lb, capped: desiredLb > validKeys[validKeys.length - 1], maxLb: validKeys[validKeys.length - 1] };
-    }
-
+    // The only place product-facing code calls the Calculator Engine.
+    // Return shape is unchanged from the pre-Supabase version (price/lb/capped/
+    // priceUsd) so every existing caller keeps working; deliveryDays is new
+    // and additive.
     function lookupShipping(weight, unit, carrierId) {
       const lbExact = getWeightLb(weight, unit);
-      if (lbExact <= 0) return { price: 0, lb: 0, capped: false, priceUsd: 0 };
-      const lb = Math.ceil(lbExact);
+      if (lbExact <= 0) return { price: 0, lb: 0, capped: false, priceUsd: 0, deliveryDays: '' };
       const carrier = CARRIERS.find(c => c.id === carrierId);
-      if (!carrier) return { price: 0, lb: 0, capped: false, priceUsd: 0 };
+      if (!carrier) return { price: 0, lb: 0, capped: false, priceUsd: 0, deliveryDays: '' };
 
-      if (carrier.source === 'myus') {
-        const table = mergeMyusRates();
-        const avail = availableLb(table, lb, carrierId);
-        if (avail.lb <= 0) return { price: 0, lb: 0, capped: false, priceUsd: 0 };
-        const priceUsd = table[avail.lb]?.[carrierId] || 0;
-        return { price: priceUsd * USD_TO_SAR, lb: avail.lb, capped: avail.capped, priceUsd };
-      } else {
-        const table = mergeShopshipRates();
-        const avail = availableLb(table, lb, null);
-        if (avail.lb <= 0) return { price: 0, lb: 0, capped: false, priceUsd: 0 };
-        return { price: table[avail.lb] || 0, lb: avail.lb, capped: avail.capped, priceUsd: 0 };
-      }
+      const rate = ShippingProvider.getRate(carrier.warehouseCode, carrier.carrierCode, lbExact);
+      if (!rate) return { price: 0, lb: 0, capped: false, priceUsd: 0, deliveryDays: '' };
+
+      const isUsd = rate.currency === 'USD';
+      const priceSar = isUsd ? rate.price * USD_TO_SAR : rate.price;
+      return {
+        price: priceSar,
+        lb: rate.lb,
+        capped: rate.capped,
+        priceUsd: isUsd ? rate.price : 0,
+        deliveryDays: rate.deliveryDays || carrier.time,
+      };
     }
 
     function hasOrderTypeChoice() {
@@ -4648,7 +4968,7 @@
       const feeCodes = uniqueList(rules.flatMap(rule => rule.extraFees?.[carrier.source] || []));
       const feeAmount = feeCodes.reduce((sum, code) => sum + feeAmountByCode(code, p, index), 0);
 
-      if (carrier.source === 'myus' && feeAmount > 0 && !['dhl', 'fedex'].includes(carrier.id)) {
+      if (carrier.source === 'myus' && feeAmount > 0 && !['dhl', 'fedex', 'fedex_economy'].includes(carrier.id)) {
         return { status: 'hidden', reason: 'منتجات الرسوم الإضافية في MyUS تشحن عبر DHL و FedEx فقط', rules, feeAmount, feeCodes };
       }
 
@@ -4666,7 +4986,7 @@
         if (carrier.source === 'shopship' && !isShopshipUploaded()) return null;
         const shipping = lookupShipping(p.weight, p.weightUnit, carrier.id);
         if (!shipping.price) return null;
-        const discount = ['fedex', 'dhl'].includes(carrier.id) ? state.carrierDiscount : 0;
+        const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
         const discountedPrice = shipping.price * (1 - discount / 100);
         const finalPrice = discountedPrice + (assessment.feeAmount || 0);
         return { ...carrier, originalIndex, assessment, blocked: false, shipping, discount, discountedPrice, finalPrice };
@@ -4718,10 +5038,10 @@
       if (restriction.blocked) return { price: 0, lb: 0, capped: false, priceUsd: 0, carrier: null, discount: 0, blocked: true, reason: restriction.reason, extraFeeAmount: 0, shippingOnly: 0 };
       const cheapest = CARRIERS
         .filter(carrier => carrier.source === 'myus')
-        .filter(carrier => !restriction.hasExtraFee || ['fedex', 'dhl'].includes(carrier.id))
+        .filter(carrier => !restriction.hasExtraFee || ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id))
         .map((carrier, originalIndex) => {
           const shipping = lookupShipping(weightLb, 'lb', carrier.id);
-          const discount = ['fedex', 'dhl'].includes(carrier.id) ? state.carrierDiscount : 0;
+          const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
           const discountedPrice = shipping.price * (1 - discount / 100);
           const finalPrice = discountedPrice + (restriction.feeAmount || 0);
           return { carrier, originalIndex, shipping, discount, discountedPrice, finalPrice };
@@ -4753,7 +5073,7 @@
       const priceRsar = productPriceSar(p, index);
       let shippingRsar = 0;
       let shippingInfo = null;
-      const supportsDis = ['fedex', 'dhl'].includes(p.carrierId);
+      const supportsDis = ['fedex', 'dhl', 'fedex_economy'].includes(p.carrierId);
       const discount = supportsDis ? state.carrierDiscount : 0;
 
       if (p.shippingType === 'direct') {
@@ -4764,12 +5084,17 @@
 
       let automaticExtraFeeAmount = 0;
       if (p.shippingType === 'indirect' && p.weight) {
-        const cheapest = cheapestCarrierOptionForProduct(p, index);
-        if (cheapest) {
-          p.carrierId = cheapest.id;
-          shippingInfo = cheapest.shipping;
-          shippingRsar += cheapest.discountedPrice;
-          automaticExtraFeeAmount = cheapest.assessment?.feeAmount || 0;
+        // Respect the carrier the user manually picked (see carrierList's
+        // onclick) as long as it's still a valid, priced, non-blocked
+        // option; only fall back to the cheapest one when there's no
+        // selection yet or the previous selection stopped being valid.
+        const options = sortedPricedCarrierOptionsForProduct(p, index, false);
+        const selected = options.find(o => o.id === p.carrierId) || options[0] || null;
+        if (selected) {
+          p.carrierId = selected.id;
+          shippingInfo = selected.shipping;
+          shippingRsar += selected.discountedPrice;
+          automaticExtraFeeAmount = selected.assessment?.feeAmount || 0;
         } else {
           shippingInfo = lookupShipping(p.weight, p.weightUnit, p.carrierId);
           shippingRsar += shippingInfo.price;
@@ -4780,7 +5105,7 @@
       const manualAdditionalFeeAmount = (p.shippingType !== 'direct' && p.additionalFee !== 'none') ? (parseFloat(p.additionalFeeAmount) || 0) : 0;
       const additionalFeeAmount = manualAdditionalFeeAmount + automaticExtraFeeAmount;
 
-      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: ['fedex', 'dhl'].includes(p.carrierId) ? state.carrierDiscount : 0 };
+      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: ['fedex', 'dhl', 'fedex_economy'].includes(p.carrierId) ? state.carrierDiscount : 0 };
     }
 
     function currentCalcs() {
@@ -4859,23 +5184,35 @@
       return lines.join('\n');
     }
 
-    function checkSavedWeight(name) {
-      if (!name) return null;
-      return state.savedWeights.find(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
+    // Saved weights live in Supabase (product_weights table), keyed on the
+    // NORMALIZED pair (product_url, product_name) -- both must match, per
+    // the matching rule. state.savedWeights is just the in-memory mirror of
+    // that table, loaded once at startup by loadSavedWeights().
+    function normalizeMatchText(v) {
+      return String(v || '').toLowerCase().trim();
+    }
+
+    function findSavedWeightMatch(url, name) {
+      const u = normalizeMatchText(url), n = normalizeMatchText(name);
+      if (!u || !n) return null;
+      return state.savedWeights.find(w => normalizeMatchText(w.url) === u && normalizeMatchText(w.name) === n) || null;
+    }
+
+    function checkSavedWeight(name, url) {
+      return findSavedWeightMatch(url, name);
     }
 
     function fillSavedWeightForProduct(p, saved) {
       if (!p || !saved) return;
       p.weight = saved.weight;
-      p.weightUnit = saved.weightUnit;
+      p.weightUnit = 'lb';
       p.quantityWeightApplied = false;
-      if (saved.source) p.weightSource = saved.source;
     }
 
     function applySavedWeight(productId) {
       const p = state.products.find(pr => pr.id === productId);
       if (!p) return;
-      const saved = checkSavedWeight(p.name);
+      const saved = findSavedWeightMatch(p.link, p.name);
       if (saved) {
         fillSavedWeightForProduct(p, saved);
         saveState();
@@ -4914,29 +5251,39 @@
       toast('تم تحويل الوزن');
     }
 
-    function saveWeightFromProduct(productId) {
+    async function saveWeightFromProduct(productId) {
       const p = state.products.find(pr => pr.id === productId);
       if (!p) return;
+      if (!p.link?.trim()) { toast('أدخل رابط المنتج أولاً'); return; }
       if (!p.name?.trim()) { toast('أدخل اسم المنتج أولاً'); return; }
       if (!p.weight) { toast('أدخل الوزن أولاً'); return; }
 
-      const idx = state.savedWeights.findIndex(w => w.name.toLowerCase().trim() === p.name.toLowerCase().trim());
-      const item = {
-        id: idx >= 0 ? state.savedWeights[idx].id : uid(),
-        name: p.name.trim(),
-        weight: p.weight,
-        weightUnit: p.weightUnit,
-        source: p.weightSource || p.link || '',
-        updatedAt: new Date().toISOString()
-      };
-      if (idx >= 0) state.savedWeights[idx] = item;
-      else state.savedWeights.push(item);
-      saveState();
+      const url = p.link.trim();
+      const name = p.name.trim();
+      const weightLb = p.weightUnit === 'kg' ? getWeightLb(p.weight, 'kg') : (parseFloat(p.weight) || 0);
+      const existing = findSavedWeightMatch(url, name);
+
+      try {
+        if (existing) await updateSavedWeightRow(existing.id, { url, name, weight: weightLb });
+        else await createSavedWeightRow({ url, name, weight: weightLb });
+      } catch (err) {
+        console.error(err);
+        toast('فشل حفظ الوزن في قاعدة البيانات');
+        return;
+      }
+      await loadSavedWeights();
       render();
-      toast(idx >= 0 ? 'تم تحديث الوزن المحفوظ' : 'تم حفظ الوزن');
+      toast(existing ? 'تم تحديث الوزن المحفوظ' : 'تم حفظ الوزن');
     }
 
-    function deleteSavedWeight(id) {
+    async function deleteSavedWeight(id) {
+      try {
+        await deleteSavedWeightRow(id);
+      } catch (err) {
+        console.error(err);
+        toast('فشل حذف الوزن من قاعدة البيانات');
+        return;
+      }
       state.savedWeights = state.savedWeights.filter(w => w.id !== id);
       saveState();
       render();
@@ -4946,7 +5293,7 @@
     function renderSavedWeightsFileStatus() {
       const el = document.getElementById('savedWeightsFileStatus');
       if (!el) return;
-      el.textContent = `الأوزان محفوظة داخل المتصفح: ${state.savedWeights.length} وزن محفوظ. يمكنك تصديرها أو استيرادها كملف Excel.`;
+      el.textContent = `الأوزان محفوظة في قاعدة البيانات: ${state.savedWeights.length} وزن محفوظ. يمكنك تصديرها أو استيرادها كملف Excel.`;
     }
 
     function exportSavedWeightsExcel() {
@@ -4957,9 +5304,8 @@
         .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ar'))
         .map(w => ({
           'اسم المنتج': w.name || '',
-          'الوزن': w.weight || '',
-          'الوحدة': w.weightUnit === 'kg' ? 'كجم' : 'رطل',
-          'مصدر الوزن': w.source || '',
+          'رابط المنتج': w.url || '',
+          'الوزن (رطل)': w.weight || '',
           'تاريخ آخر تحديث': w.updatedAt ? new Date(w.updatedAt).toISOString().slice(0, 10) : ''
         }));
       const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -4981,47 +5327,38 @@
         const headerRowIndex = rows.findIndex(row => {
           const headers = row.map(norm);
           return findSavedWeightImportColumn(headers, ['اسم المنتج', 'product name', 'product', 'name', 'المنتج']) >= 0 &&
+                 findSavedWeightImportColumn(headers, ['رابط المنتج', 'product url', 'url', 'link', 'رابط']) >= 0 &&
                  findSavedWeightImportColumn(headers, ['الوزن', 'weight']) >= 0;
         });
         if (headerRowIndex < 0) throw new Error('لم أتعرف على أعمدة ملف الأوزان. استخدم ملف التصدير من نفس الصفحة.');
 
         const headers = rows[headerRowIndex].map(norm);
         const nameCol = findSavedWeightImportColumn(headers, ['اسم المنتج', 'product name', 'product', 'name', 'المنتج']);
+        const urlCol = findSavedWeightImportColumn(headers, ['رابط المنتج', 'product url', 'url', 'link', 'رابط']);
         const weightCol = findSavedWeightImportColumn(headers, ['الوزن', 'weight']);
-        const unitCol = findSavedWeightImportColumn(headers, ['الوحدة', 'unit']);
-        const sourceCol = findSavedWeightImportColumn(headers, ['مصدر الوزن', 'source', 'link', 'رابط', 'المصدر']);
-        const dateCol = findSavedWeightImportColumn(headers, ['تاريخ آخر تحديث', 'updated', 'date', 'تاريخ']);
         let imported = 0;
 
-        rows.slice(headerRowIndex + 1).forEach(row => {
+        for (const row of rows.slice(headerRowIndex + 1)) {
           const name = String(row[nameCol] || '').trim();
-          if (!name) return;
+          const url = String(row[urlCol] || '').trim();
+          if (!name || !url) continue;
           const rawWeight = row[weightCol];
           const numericWeight = cleanNumber(rawWeight);
-          const weight = numericWeight != null ? String(numericWeight) : String(rawWeight || '').trim();
-          if (!weight) return;
-          const unitText = String(unitCol >= 0 ? row[unitCol] || '' : '').trim().toLowerCase();
-          const weightUnit = unitText.includes('كجم') || unitText.includes('كيلو') || unitText.includes('kg') ? 'kg' : 'lb';
-          const source = String(sourceCol >= 0 ? row[sourceCol] || '' : '').trim();
-          const rawDate = String(dateCol >= 0 ? row[dateCol] || '' : '').trim();
-          const parsedDate = rawDate ? new Date(rawDate) : null;
-          const updatedAt = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : new Date().toISOString();
-          const idx = state.savedWeights.findIndex(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
-          const item = {
-            id: idx >= 0 ? state.savedWeights[idx].id : uid(),
-            name,
-            weight,
-            weightUnit,
-            source,
-            updatedAt
-          };
-          if (idx >= 0) state.savedWeights[idx] = item;
-          else state.savedWeights.push(item);
-          imported++;
-        });
+          const weight = numericWeight != null ? numericWeight : (parseFloat(rawWeight) || 0);
+          if (!weight) continue;
+
+          const existing = findSavedWeightMatch(url, name);
+          try {
+            if (existing) await updateSavedWeightRow(existing.id, { url, name, weight });
+            else await createSavedWeightRow({ url, name, weight });
+            imported++;
+          } catch (err) {
+            console.error(err);
+          }
+        }
 
         if (!imported) throw new Error('لم أجد أوزان صالحة داخل الملف.');
-        saveState();
+        await loadSavedWeights();
         render();
         toast(`تم استيراد ${imported} وزن من Excel`);
       } catch (err) {
@@ -5099,6 +5436,14 @@
       render();
     }
 
+    async function pasteIntoProductField(productId, field) {
+      try {
+        const text = await navigator.clipboard.readText();
+        updateProduct(productId, field, text);
+      } catch (e) { }
+    }
+    window.pasteIntoProductField = pasteIntoProductField;
+
     function updateProduct(id, field, value, shouldRender = true) {
       const p = state.products.find(pr => pr.id === id);
       if (!p) return;
@@ -5108,8 +5453,8 @@
         p.quantityWeightApplied = false;
       }
 
-      if (field === 'name') {
-        const saved = checkSavedWeight(value);
+      if (field === 'name' || field === 'link') {
+        const saved = checkSavedWeight(p.name, p.link);
         if (saved) fillSavedWeightForProduct(p, saved);
       }
 
@@ -5191,6 +5536,20 @@
       }[m]));
     }
 
+    // Compact display for potentially-long product URLs: shows the domain
+    // (falling back to a plain truncation if the URL doesn't parse), while
+    // the full href is always preserved for the actual link/attribute.
+    function compactUrlLabel(url) {
+      const raw = String(url || '').trim();
+      if (!raw) return '';
+      try {
+        const u = new URL(raw);
+        return u.hostname.replace(/^www\./, '');
+      } catch (e) {
+        return raw.length > 40 ? raw.slice(0, 40) + '...' : raw;
+      }
+    }
+
 
     function renderAdditionalFees(p, isDirect) {
       if (isDirect) return '';
@@ -5227,6 +5586,14 @@
       return `<label class="label">${text}</label>`;
     }
 
+    function pasteIconBtn(productId, field) {
+      return `
+        <button type="button" class="pasteIconBtn" onclick="pasteIntoProductField('${productId}', '${field}')" aria-label="لصق من الحافظة" title="لصق من الحافظة">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+        </button>
+      `;
+    }
+
     function renderProductCoreFields(p, index = 0, singleLite = false) {
       const quantity = Math.max(1, parseFloat(p.quantity) || 1);
       const baseProduct = state.products?.[0] || p;
@@ -5237,7 +5604,10 @@
           <div class="${singleLite ? 'singleSiteProductRow' : 'productMainRow'}">
             <div class="fieldCell">
               ${fieldLabel('سعر المنتج')}
-              <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+              <div class="inputWithPaste">
+                <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+                ${pasteIconBtn(p.id, 'price')}
+              </div>
             </div>
             <div class="fieldCell">
               ${fieldLabel('الكمية')}
@@ -5245,11 +5615,17 @@
             </div>
             <div class="fieldCell">
               ${fieldLabel('رابط المنتج')}
-              <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+              <div class="inputWithPaste">
+                <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+                ${pasteIconBtn(p.id, 'link')}
+              </div>
             </div>
             <div class="fieldCell">
               ${fieldLabel('اسم المنتج')}
-              <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+              <div class="inputWithPaste">
+                <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+                ${pasteIconBtn(p.id, 'name')}
+              </div>
             </div>
             <div class="fieldCell">
               ${fieldLabel('نوع المنتج')}
@@ -5270,16 +5646,25 @@
       return `
         <div class="singleSiteProductsRow" data-product-id="${p.id}">
           <div class="fieldCell">
-            <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+            <div class="inputWithPaste">
+              <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+              ${pasteIconBtn(p.id, 'price')}
+            </div>
           </div>
           <div class="fieldCell">
             <input class="input" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(p.quantity ?? 1)}" oninput="updateProduct('${p.id}', 'quantity', this.value || 1, false)" onblur="render()">
           </div>
           <div class="fieldCell">
-            <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+            <div class="inputWithPaste">
+              <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+              ${pasteIconBtn(p.id, 'link')}
+            </div>
           </div>
           <div class="fieldCell">
-            <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+            <div class="inputWithPaste">
+              <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+              ${pasteIconBtn(p.id, 'name')}
+            </div>
           </div>
           <div class="fieldCell">
             <select onchange="updateProduct('${p.id}', 'productType', this.value)">
@@ -5394,7 +5779,7 @@
         const shippingChosen = hasShippingChoice(p);
         const isDirect = p.shippingType === 'direct';
         const isIndirect = p.shippingType === 'indirect';
-        const savedMatch = checkSavedWeight(p.name);
+        const savedMatch = findSavedWeightMatch(p.link, p.name);
         const quantity = Math.max(1, parseFloat(p.quantity) || 1);
         const quantityWeightSuggestion = (parseFloat(p.weight) || 0) * quantity;
         const showQuantityWeightSuggestion = p.weight && quantity > 1 && !p.quantityWeightApplied;
@@ -5462,13 +5847,13 @@
                       ${savedMatch ? `
                         <div class="savedWeightInlineBox">
                           <div class="savedWeightInlineMain">
-                            <b>${savedMatch.weight} ${savedMatch.weightUnit === 'lb' ? 'رطل' : 'كجم'}</b>
-                            <span>${savedMatch.source ? escapeHtml(savedMatch.source.length > 30 ? savedMatch.source.slice(0, 30) + '...' : savedMatch.source) : 'مرتبط باسم المنتج'}</span>
+                            <b>${savedMatch.weight} رطل</b>
+                            <span title="${escapeHtml(savedMatch.url)}">${escapeHtml(compactUrlLabel(savedMatch.url))}</span>
                           </div>
-                          ${(savedMatch.weight !== p.weight || savedMatch.weightUnit !== p.weightUnit) ? `<button class="savedWeightInlineApply" onclick="applySavedWeight('${p.id}')">استخدام</button>` : ''}
+                          ${(savedMatch.weight !== p.weight || p.weightUnit !== 'lb') ? `<button class="savedWeightInlineApply" onclick="applySavedWeight('${p.id}')">استخدام</button>` : ''}
                         </div>
                       ` : `
-                        <div class="savedWeightInlineBox empty">${p.name ? 'لا يوجد وزن محفوظ لهذا الاسم' : 'اكتب اسم المنتج لعرض السجل'}</div>
+                        <div class="savedWeightInlineBox empty">${(!p.name || !p.link) ? 'اكتب اسم ورابط المنتج لعرض السجل' : 'لا يوجد وزن محفوظ لهذا المنتج'}</div>
                       `}
                     </div>
                     <div>
@@ -5534,7 +5919,7 @@
     }
 
     function renderCarriers(p) {
-      // التحقق من رفع ملفات Excel؛ إذا كان المنتج ممنوعاً نعرض سبب المنع حتى بدون أسعار مرفوعة
+      // التحقق من جاهزية أسعار الشحن من قاعدة البيانات؛ إذا كان المنتج ممنوعاً نعرض سبب المنع حتى بدون أسعار
       const hasRestrictionMatch = matchedShippingRules(p).length > 0;
       if (!isMyusUploaded() && !isShopshipUploaded() && !hasRestrictionMatch) {
         return `
@@ -5550,8 +5935,8 @@
                   </svg>
                 </div>
                 <div class="filesAlertText">
-                  <h4 class="filesAlertTitle">يرجى رفع ملفات الإكسل</h4>
-                  <p class="filesAlertDesc">لعرض أسعار الشحن غير المباشر، ارفع ملف MyUS أو Shop & Ship حسب الشركة التي تريد استخدامها</p>
+                  <h4 class="filesAlertTitle">${ShippingProvider.isLoading() ? 'جاري تحميل أسعار الشحن...' : 'تعذر تحميل أسعار الشحن'}</h4>
+                  <p class="filesAlertDesc">${ShippingProvider.isLoading() ? 'يتم تحميل الأسعار من قاعدة البيانات، الرجاء الانتظار' : 'تحقق من الاتصال بالإنترنت ثم أعد المحاولة'}</p>
                 </div>
               </div>
 
@@ -5563,7 +5948,7 @@
                       : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
                     }
                   </span>
-                  <span class="fileStatusName">ملف أسعار MyUS</span>
+                  <span class="fileStatusName">أسعار MyUS</span>
                 </div>
                 <div class="fileStatusItem ${isShopshipUploaded() ? 'uploaded' : ''}">
                   <span class="fileStatusBadge">
@@ -5572,28 +5957,34 @@
                       : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
                     }
                   </span>
-                  <span class="fileStatusName">ملف أسعار Shop & Ship</span>
+                  <span class="fileStatusName">أسعار Shop & Ship</span>
                 </div>
               </div>
 
-              <button class="filesAlertBtn" onclick="openSettingsModal()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                رفع ملفات الإكسل الآن
-              </button>
+              ${!ShippingProvider.isLoading() ? `
+                <button class="filesAlertBtn" onclick="retryLoadShippingRates()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  إعادة المحاولة
+                </button>
+              ` : ''}
             </div>
           </div>
         `;
       }
 
-      // إذا تم رفع الملفات، عرض القائمة مع مراعاة الممنوعات والرسوم الإضافية
+      // البيانات جاهزة من قاعدة البيانات، عرض القائمة مع مراعاة الممنوعات والرسوم الإضافية
       const carriersWithPrices = sortedPricedCarrierOptionsForProduct(p, state.products.indexOf(p), true);
       const firstAvailableCarrier = carriersWithPrices.find(c => !c.blocked);
+      // Only fall back to the first (cheapest) carrier when there's no
+      // selection yet or the previous one is no longer valid/available --
+      // otherwise this would silently revert the user's manual carrier pick
+      // (see carrierItem's onclick below) on every render.
+      const hasValidSelection = carriersWithPrices.some(c => !c.blocked && c.id === p.carrierId);
 
-      if (firstAvailableCarrier && p.carrierId !== firstAvailableCarrier.id) {
+      if (firstAvailableCarrier && !hasValidSelection) {
         p.carrierId = firstAvailableCarrier.id;
         saveState();
       }
@@ -5613,7 +6004,7 @@
                 </div>
                 <div class="filesAlertText">
                   <h4 class="filesAlertTitle">لا توجد أسعار لهذا الوزن</h4>
-                  <p class="filesAlertDesc">لم يتم العثور على أسعار في الملفات المرفوعة لهذا الوزن. تحقق من ملفات الإكسل المرفوعة.</p>
+                  <p class="filesAlertDesc">لم يتم العثور على سعر لهذا الوزن في قاعدة البيانات لأي شركة شحن.</p>
                 </div>
               </div>
             </div>
@@ -5664,7 +6055,7 @@
                 <button class="carrierItem ${isActive ? 'active' : ''} ${isBest ? 'bestCarrier' : ''}" onclick="updateProduct('${p.id}', 'carrierId', '${c.id}')">
                   <div class="carrierLabel">
                     <b>${c.label}<span class="carrierRank">${rankLabel}</span></b>
-                    <small>${c.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
+                    <small>${s.deliveryDays || c.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                   </div>
                   ${feeAmount > 0 ? `
                     <div class="carrierPrice feeBreakdown">
@@ -5700,13 +6091,13 @@
       const combinedRestriction = getCombinedMyusRestrictionSummary();
       const carriersWithPrices = CARRIERS
         .filter(carrier => carrier.source === 'myus')
-        .filter(carrier => !combinedRestriction.hasExtraFee || ['fedex', 'dhl'].includes(carrier.id))
+        .filter(carrier => !combinedRestriction.hasExtraFee || ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id))
         .map((carrier, originalIndex) => {
           if (combinedRestriction.blocked) {
             return { ...carrier, originalIndex, blocked: true, reason: combinedRestriction.reason, shipping: { price: 0, lb: 0, capped: false, priceUsd: 0 }, discount: 0, discountedPrice: 0, finalPrice: 0 };
           }
           const shipping = lookupShipping(c.combinedWeightLb, 'lb', carrier.id);
-          const discount = ['fedex', 'dhl'].includes(carrier.id) ? state.carrierDiscount : 0;
+          const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
           const discountedPrice = shipping.price * (1 - discount / 100);
           const finalPrice = discountedPrice + (combinedRestriction.feeAmount || 0);
           return { ...carrier, originalIndex, shipping, discount, discountedPrice, finalPrice, extraFeeAmount: combinedRestriction.feeAmount || 0 };
@@ -5738,18 +6129,19 @@
                   </svg>
                 </div>
                 <div class="filesAlertText">
-                  <h4 class="filesAlertTitle">يرجى رفع ملف MyUS</h4>
-                  <p class="filesAlertDesc">لعرض أسعار الشحنة المجمعة، ارفع ملف أسعار MyUS من الإعدادات</p>
+                  <h4 class="filesAlertTitle">${ShippingProvider.isLoading() ? 'جاري تحميل أسعار MyUS...' : 'تعذر تحميل أسعار MyUS'}</h4>
+                  <p class="filesAlertDesc">${ShippingProvider.isLoading() ? 'يتم تحميل الأسعار من قاعدة البيانات، الرجاء الانتظار' : 'تحقق من الاتصال بالإنترنت ثم أعد المحاولة لعرض أسعار الشحنة المجمعة'}</p>
                 </div>
               </div>
-              <button class="filesAlertBtn" onclick="openSettingsModal()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                رفع ملف MyUS الآن
-              </button>
+              ${!ShippingProvider.isLoading() ? `
+                <button class="filesAlertBtn" onclick="retryLoadShippingRates()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  إعادة المحاولة
+                </button>
+              ` : ''}
             </div>
           ` : carriersWithPrices.length ? `
             <div class="discountPanel">
@@ -5788,7 +6180,7 @@
                   <button class="carrierItem ${idx === 0 ? 'active bestCarrier' : ''}" type="button">
                     <div class="carrierLabel">
                       <b>${carrier.label}<span class="carrierRank">${idx === 0 ? 'الأرخص' : '#' + (idx + 1)}</span></b>
-                      <small>${carrier.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
+                      <small>${s.deliveryDays || carrier.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                     </div>
                     ${feeAmount > 0 ? `
                       <div class="carrierPrice feeBreakdown">
@@ -5821,7 +6213,7 @@
                 </div>
                 <div class="filesAlertText">
                   <h4 class="filesAlertTitle">لا توجد أسعار لهذا الوزن</h4>
-                  <p class="filesAlertDesc">لم يتم العثور على أسعار MyUS في الملف المرفوع لهذا الوزن المجمع.</p>
+                  <p class="filesAlertDesc">لم يتم العثور على سعر MyUS في قاعدة البيانات لهذا الوزن المجمع.</p>
                 </div>
               </div>
             </div>
@@ -5949,11 +6341,21 @@
       renderRecentQuotes();
       toast('تم حذف التسعيرة');
     }
-
-    function convertQuoteToOrder(id) {
+    async function convertQuoteToOrder(id) {
       const quote = (state.recentQuotes || []).find(q => q.id === id);
       if (!quote) { toast('لم أجد هذه التسعيرة'); return; }
       const products = Array.isArray(quote.products) ? quote.products.map(prod => ({ name: prod.name || '', link: prod.link || '' })) : [];
+      // لطلبات من عدة مواقع: نحوّل كل منتج إلى شحنة مستقلة بحالتها الخاصة
+      const shipments = quote.orderType === 'multiSite'
+        ? products.map(prod => ({
+            id: uid(),
+            productName: prod.name || '',
+            shippingUrl: prod.link || '',
+            orderNumber: '',
+            trackingNumber: '',
+            status: 'purchased'
+          }))
+        : [];
       const order = {
         ...orderTemplate(),
         customerName: '',
@@ -5961,15 +6363,22 @@
         whatsappLink: '',
         productLink: products.find(p => p.link)?.link || '',
         products,
+        shipments,
         carrier: quote.carrier || '',
         indirectShippingCustomer: Number(quote.internationalShippingTotal || 0) || 0,
         status: 'purchased',
         purchaseDate: todayInput(),
         statusUpdatedAt: todayInput(),
-        notes: `تم التحويل من آخر التسعيرات.\nإجمالي التسعيرة للعميل: ${fmtMoney(quote.total)} ر.س\nعدد المنتجات: ${products.length}`
+        notes: ''
       };
-      state.orders = Array.isArray(state.orders) ? state.orders : [];
-      state.orders.unshift(order);
+      try {
+        await createOrder(order);
+      } catch (err) {
+        console.error(err);
+        toast('فشل حفظ الطلب في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
       state.recentQuotes = (state.recentQuotes || []).filter(q => q.id !== id);
       if (state.currentQuoteId === id) {
         state.products = [productTemplate()];
@@ -6006,7 +6415,7 @@
         ? state.savedWeights.slice().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
         : state.savedWeights.filter(w =>
             w.name.toLowerCase().includes(search) ||
-            (w.source || '').toLowerCase().includes(search)
+            (w.url || '').toLowerCase().includes(search)
           );
 
       if (!filtered.length) {
@@ -6023,8 +6432,8 @@
             </button>
           </div>
           <div class="savedWeightMeta">
-            <b style="color: var(--primary2);">${w.weight} ${w.weightUnit === 'lb' ? 'رطل' : 'كجم'}</b>
-            ${w.source ? ' · ' + escapeHtml(w.source.length > 40 ? w.source.slice(0, 40) + '...' : w.source) : ''}<br>
+            <b style="color: var(--primary2);">${w.weight} رطل</b>
+            ${w.url ? ' · <a href="' + escapeHtml(w.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(w.url) + '">' + escapeHtml(compactUrlLabel(w.url)) + '</a>' : ''}<br>
             آخر تحديث: ${new Date(w.updatedAt).toLocaleDateString('ar-SA')}
           </div>
         </div>
@@ -6079,9 +6488,11 @@
         const missingCount = state.orderShippingMode === 'myusCombined' ? (myusOk ? 0 : 1) : (myusOk ? 0 : 1) + (shopOk ? 0 : 1);
         const msg = banner.querySelector('.topBannerMsg');
         if (msg) {
-          msg.textContent = state.orderShippingMode === 'myusCombined'
-            ? 'يلزم رفع ملف MyUS لعرض سعر الشحنة المجمعة'
-            : `يلزم رفع ${missingCount === 2 ? 'ملفي' : 'ملف'} الإكسل لعرض أسعار الشحن غير المباشر`;
+          msg.textContent = ShippingProvider.isLoading()
+            ? 'جاري تحميل أسعار الشحن من قاعدة البيانات...'
+            : state.orderShippingMode === 'myusCombined'
+              ? 'تعذر تحميل أسعار MyUS — اضغط لإعادة المحاولة'
+              : `تعذر تحميل أسعار ${missingCount === 2 ? 'MyUS و Shop & Ship' : (isMyusUploaded() ? 'Shop & Ship' : 'MyUS')} — اضغط لإعادة المحاولة`;
         }
       }
     }
@@ -6156,58 +6567,159 @@
       return `ORD-${stamp}-${String(count).padStart(3, '0')}`;
     }
 
+    /* ======= Dynamic Product Rows ======= */
+    function buildOrderProductRow(index, data) {
+      data = data || {};
+      const statusOpts = ORDER_STATUSES.map(s =>
+        `<option value="${s.id}" ${(data.status || 'purchased') === s.id ? 'selected' : ''}>${s.label}</option>`
+      ).join('');
+      const labelSuffix = index > 0 ? ' ' + (index + 1) : '';
+      const today = data.statusUpdatedAt || todayInput();
+      return `<div class="orderRow6" data-product-row="${index}">
+        <div>
+          <label class="label">رابط المنتج${escapeHtml(labelSuffix)}</label>
+          <input class="input ltr" name="oProductLink" type="url" placeholder="https://..." value="${escapeHtml(data.link || '')}">
+        </div>
+        <div>
+          <label class="label">اسم المنتج</label>
+          <input class="input" name="oProductName" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(data.name || '')}">
+        </div>
+        <div>
+          <label class="label">رقم الطلب</label>
+          <input class="input ltr" name="oSellerOrderNum" type="text" placeholder="مثال: 1234-56789" value="${escapeHtml(data.sellerOrderNumber || '')}">
+        </div>
+        <div>
+          <label class="label">رقم التتبع</label>
+          <input class="input ltr" name="oTrackingNum" type="text" placeholder="مثال: 1Z999AA10123456784" value="${escapeHtml(data.trackingNumber || '')}">
+        </div>
+        <div>
+          <label class="label">الحالة</label>
+          <select name="oStatus">${statusOpts}</select>
+        </div>
+        <div>
+          <label class="label">آخر تحديث</label>
+          <input class="input ltr" name="oStatusDate" type="date" value="${escapeHtml(today)}">
+        </div>
+      </div>`;
+    }
+
+    function renderOrderProductRows(products) {
+      const container = document.getElementById('orderProductRowsContainer');
+      if (!container) return;
+      const items = (Array.isArray(products) && products.length) ? products : [{}];
+      container.innerHTML = items.map((p, i) => buildOrderProductRow(i, p)).join('');
+    }
+
+    function readOrderProductRows() {
+      const container = document.getElementById('orderProductRowsContainer');
+      if (!container) return [{}];
+      return Array.from(container.querySelectorAll('[data-product-row]')).map(row => ({
+        link: (row.querySelector('[name="oProductLink"]')?.value || '').trim(),
+        name: (row.querySelector('[name="oProductName"]')?.value || '').trim(),
+        sellerOrderNumber: (row.querySelector('[name="oSellerOrderNum"]')?.value || '').trim(),
+        trackingNumber: (row.querySelector('[name="oTrackingNum"]')?.value || '').trim(),
+        status: row.querySelector('[name="oStatus"]')?.value || 'purchased',
+        statusUpdatedAt: (row.querySelector('[name="oStatusDate"]')?.value || '').trim() || todayInput(),
+      }));
+    }
+
+    /* ======= Notes / Comment Tags ======= */
+    var currentOrderNotes = [];
+
+    function renderOrderNoteTags() {
+      const container = document.getElementById('noteTagsContainer');
+      if (!container) return;
+      if (!currentOrderNotes.length) { container.innerHTML = ''; return; }
+      container.innerHTML = currentOrderNotes.map((note, i) => {
+        const d = new Date(note.createdAt);
+        const timeStr = isNaN(d.getTime()) ? '' : (d.toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }));
+        return `<div class="noteTag">
+          <span class="noteTagText" title="${escapeHtml(note.text)}">${escapeHtml(note.text)}</span>
+          <span class="noteTagTime">${escapeHtml(timeStr)}</span>
+          <button type="button" class="noteTagDelete" onclick="removeOrderNote(${i})" title="حذف">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+          </button>
+        </div>`;
+      }).join('');
+    }
+
+    function addOrderNote() {
+      const input = document.getElementById('orderNoteInput');
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      currentOrderNotes.push({ text: text, createdAt: new Date().toISOString() });
+      input.value = '';
+      renderOrderNoteTags();
+    }
+
+    function removeOrderNote(index) {
+      currentOrderNotes.splice(index, 1);
+      renderOrderNoteTags();
+    }
+
+    window.removeOrderNote = removeOrderNote;
+    window.addOrderNote = addOrderNote;
+
+    /* ======= Reset / Init ======= */
     function resetOrderForm() {
-      const ids = ['editingOrderId','orderCustomer','orderCustomerTitle','orderNumber','sellerOrderNumber','sellerName','orderWhatsapp','orderProductLink','orderLocalTracking','orderIntlTracking','orderCarrier','orderNotes'];
+      const ids = ['editingOrderId','orderCustomer','orderCustomerTitle','orderWhatsapp'];
       ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-      const status = document.getElementById('orderStatus');
-      if (status) status.value = 'purchased';
       const pDate = document.getElementById('orderPurchaseDate');
-      const uDate = document.getElementById('orderStatusUpdatedAt');
       if (pDate) pDate.value = todayInput();
-      if (uDate) uDate.value = todayInput();
       const title = document.getElementById('orderFormTitle');
       if (title) title.textContent = 'إضافة طلب جديد';
+      const shipmentsContainer = document.getElementById('shipmentsContainer');
+      if (shipmentsContainer) shipmentsContainer.innerHTML = '';
+      renderOrderProductRows([{}]);
+      currentOrderNotes = [];
+      renderOrderNoteTags();
     }
 
     function readOrderForm() {
       const v = id => (document.getElementById(id)?.value || '').trim();
+      const products = readOrderProductRows();
+      const first = products[0] || {};
       return {
         id: v('editingOrderId') || uid(),
         customerName: v('orderCustomer'),
         customerShortTitle: v('orderCustomerTitle'),
-        orderNumber: v('orderNumber') || orderNumberAuto(),
-        sellerOrderNumber: v('sellerOrderNumber'),
-        sellerName: v('sellerName'),
+        orderNumber: orderNumberAuto(),
         whatsappLink: v('orderWhatsapp'),
-        productLink: v('orderProductLink'),
-        localTracking: v('orderLocalTracking'),
-        intlTracking: v('orderIntlTracking'),
-        carrier: v('orderCarrier'),
-        status: v('orderStatus') || 'purchased',
+        productLink: first.link || '',
+        productName: first.name || '',
+        sellerOrderNumber: first.sellerOrderNumber || '',
+        trackingNumber: first.trackingNumber || '',
+        status: first.status || 'purchased',
         purchaseDate: v('orderPurchaseDate') || todayInput(),
-        statusUpdatedAt: v('orderStatusUpdatedAt') || todayInput(),
-        notes: v('orderNotes'),
+        statusUpdatedAt: first.statusUpdatedAt || todayInput(),
+        notes: currentOrderNotes.slice(),
+        products: products,
+        shipments: readShipments(),
         createdAt: new Date().toISOString()
       };
     }
 
-    function saveOrderFromForm() {
+    async function saveOrderFromForm() {
       const order = readOrderForm();
-      if (!order.customerName && !order.orderNumber && !order.sellerOrderNumber) {
+      if (!order.customerName && !order.orderNumber) {
         toast('اكتب اسم العميل أو رقم الطلب أولاً');
         return;
       }
-      state.orders = Array.isArray(state.orders) ? state.orders : [];
-      const idx = state.orders.findIndex(o => o.id === order.id);
-      if (idx >= 0) {
-        const previous = state.orders[idx];
-        state.orders[idx] = { ...previous, ...order, createdAt: previous.createdAt || order.createdAt };
-        toast('تم تحديث الطلب');
-      } else {
-        state.orders.unshift(order);
-        toast('تم حفظ الطلب في لوحة المتابعة');
+      const previous = (state.orders || []).find(o => o.id === order.id);
+      try {
+        if (previous) {
+          await updateOrder({ ...previous, ...order, createdAt: previous.createdAt || order.createdAt });
+        } else {
+          await createOrder(order);
+        }
+      } catch (err) {
+        console.error(err);
+        toast('فشل حفظ الطلب في قاعدة البيانات');
+        return;
       }
-      saveState();
+      await loadOrders();
+      toast(previous ? 'تم تحديث الطلب' : 'تم حفظ الطلب في لوحة المتابعة');
       resetOrderForm();
       render();
       switchPage('orders');
@@ -6220,47 +6732,115 @@
       set('editingOrderId', order.id);
       set('orderCustomer', order.customerName);
       set('orderCustomerTitle', order.customerShortTitle);
-      set('orderNumber', order.orderNumber);
-      set('sellerOrderNumber', order.sellerOrderNumber);
-      set('sellerName', order.sellerName);
       set('orderWhatsapp', order.whatsappLink);
-      set('orderProductLink', order.productLink);
-      set('orderLocalTracking', order.localTracking);
-      set('orderIntlTracking', order.intlTracking);
-      set('orderCarrier', order.carrier);
-      set('orderStatus', order.status);
       set('orderPurchaseDate', String(order.purchaseDate || todayInput()).slice(0, 10));
-      set('orderStatusUpdatedAt', String(order.statusUpdatedAt || todayInput()).slice(0, 10));
-      set('orderNotes', order.notes);
+
+      const orderProducts = Array.isArray(order.products) && order.products.length
+        ? order.products
+        : [{
+            link: order.productLink || '',
+            name: order.productName || '',
+            sellerOrderNumber: order.sellerOrderNumber || '',
+            trackingNumber: order.trackingNumber || '',
+            status: order.status || 'purchased',
+            statusUpdatedAt: String(order.statusUpdatedAt || todayInput()).slice(0, 10),
+          }];
+      renderOrderProductRows(orderProducts);
+
+      currentOrderNotes = Array.isArray(order.notes)
+        ? order.notes.slice()
+        : (order.notes && typeof order.notes === 'string'
+            ? [{ text: order.notes, createdAt: order.createdAt || new Date().toISOString() }]
+            : []);
+      renderOrderNoteTags();
+
       const title = document.getElementById('orderFormTitle');
       if (title) title.textContent = `تعديل طلب ${order.orderNumber || ''}`;
-      document.getElementById('ordersPage')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      renderShipmentBoxes(order.shipments || []);
+      document.querySelector('.orderFormPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function deleteOrder(id) {
+    async function deleteOrderAction(id) {
       if (!confirm('حذف هذا الطلب من السجل؟')) return;
-      state.orders = (state.orders || []).filter(o => o.id !== id);
-      saveState();
+      try {
+        await deleteOrder(id);
+      } catch (err) {
+        console.error(err);
+        toast('فشل حذف الطلب من قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
       render();
       toast('تم حذف الطلب');
     }
 
-    function changeOrderStatus(id, status) {
+    async function copyOrder(id) {
       const order = (state.orders || []).find(o => o.id === id);
       if (!order) return;
-      order.status = status;
-      order.statusUpdatedAt = todayInput();
-      if (status === 'purchased' && !order.purchaseDate) order.purchaseDate = todayInput();
-      saveState();
+      const products = Array.isArray(order.products) && order.products.length
+        ? order.products
+        : (order.productLink ? [{ name: order.customerShortTitle || 'المنتج', link: order.productLink }] : []);
+      const productLines = products.map(p => p.link || p.name || '').filter(Boolean).join('\n');
+      const shippingPrice = Number(order.indirectShippingCustomer || 0) > 0
+        ? `${fmtMoney(order.indirectShippingCustomer)} ريال`
+        : 'غير محدد';
+      const lines = [
+        `اسم العميل: ${order.customerName || '—'}`,
+        `العنوان الوطني: ${order.customerShortTitle || '—'}`,
+        `روابط المنتجات:\n${productLines || '—'}`,
+        `سعر الشحن الدولي: ${shippingPrice}`,
+      ];
+      await navigator.clipboard.writeText(lines.join('\n'));
+      toast('تم نسخ الطلب');
+    }
+
+    async function changeOrderStatus(id, status) {
+      const order = (state.orders || []).find(o => o.id === id);
+      if (!order) return;
+      const updated = { ...order, status, statusUpdatedAt: todayInput() };
+      if (status === 'purchased' && !updated.purchaseDate) updated.purchaseDate = todayInput();
+      try {
+        await updateOrder(updated);
+      } catch (err) {
+        console.error(err);
+        toast('فشل تحديث الحالة في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
       render();
       toast('تم تحديث الحالة');
     }
 
-    function refreshOrderUpdate(id) {
+    async function updateShipmentStatus(orderId, shipmentId, newStatus) {
+      const order = (state.orders || []).find(o => o.id === orderId);
+      if (!order) return;
+      const shipment = (order.shipments || []).find(s => s.id === shipmentId);
+      if (!shipment) return;
+      const shipments = (order.shipments || []).map(s => s.id === shipmentId ? { ...s, status: newStatus } : s);
+      const updated = { ...order, shipments, statusUpdatedAt: todayInput() };
+      try {
+        await updateOrder(updated);
+      } catch (err) {
+        console.error(err);
+        toast('فشل تحديث الشحنة في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
+      renderOrders();
+    }
+
+    async function refreshOrderUpdate(id) {
       const order = (state.orders || []).find(o => o.id === id);
       if (!order) return;
-      order.statusUpdatedAt = todayInput();
-      saveState();
+      const updated = { ...order, statusUpdatedAt: todayInput() };
+      try {
+        await updateOrder(updated);
+      } catch (err) {
+        console.error(err);
+        toast('فشل تسجيل التحديث في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
       render();
       toast('تم تسجيل تحديث اليوم');
     }
@@ -6294,24 +6874,89 @@ Thank you.`;
     function copyCustomerStatus(id) {
       const order = (state.orders || []).find(o => o.id === id);
       if (!order) return;
-      if (!order.intlTracking) { toast('أدخل رابط التتبع الدولي أولاً'); return; }
-      const carrier = order.carrier || 'شركة الشحن';
-      const msg = `السلام عليكم ورحمة الله وبركاته
-شحنتك مع شركة ${carrier} ويمكنك متابعة الشحن عبر الرابط:
-${order.intlTracking}`;
-      copyText(msg, 'تم نسخ رابط الشحن للعميل');
+      const updateDate = order.statusUpdatedAt ? String(order.statusUpdatedAt).slice(0, 10) : '—';
+      const msg = `السلام عليكم ورحمة الله وبركاته\nتاريخ آخر تحديث للشحنة: ${updateDate}`;
+      copyText(msg, 'تم نسخ حالة الشحنة للعميل');
     }
 
     function fillOrderFromCalculator() {
-      const p = state.products?.[0];
-      if (!p) return;
-      const orderNumberEl = document.getElementById('orderNumber');
-      const linkEl = document.getElementById('orderProductLink');
-      const notesEl = document.getElementById('orderNotes');
-      if (orderNumberEl && !orderNumberEl.value) orderNumberEl.value = orderNumberAuto();
-      if (linkEl && !linkEl.value) linkEl.value = p.link || '';
-      if (notesEl && !notesEl.value) notesEl.value = p.name ? `منتج: ${p.name}` : '';
-      toast('تمت تعبئة بيانات من أول منتج بالحاسبة');
+      const products = (state.products || []).filter(p => p.link || p.name);
+      if (!products.length) { toast('لا توجد منتجات في الحاسبة'); return; }
+      renderOrderProductRows(products.map(p => ({ link: p.link || '', name: p.name || '' })));
+      toast('تمت تعبئة بيانات المنتجات من الحاسبة');
+    }
+
+    function renderShipmentBoxes(shipments) {
+      const container = document.getElementById('shipmentsContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      (Array.isArray(shipments) ? shipments : []).forEach(s => addShipmentBox(s));
+    }
+
+    function addShipmentBox(shipment) {
+      const container = document.getElementById('shipmentsContainer');
+      if (!container) return;
+      const idx = container.children.length;
+      const statusOpts = ORDER_STATUSES.map(s =>
+        `<option value="${s.id}" ${(shipment?.status || 'purchased') === s.id ? 'selected' : ''}>${s.label}</option>`
+      ).join('');
+      const box = document.createElement('div');
+      box.className = 'shipmentFormBox';
+      if (shipment?.id) box.dataset.shipmentId = shipment.id;
+      box.innerHTML = `
+        <div class="shipmentFormBoxHeader">
+          <span class="shipmentFormBoxTitle">شحنة ${idx + 1}</span>
+          <button type="button" class="deleteBtn" onclick="removeShipmentBox(this)" aria-label="حذف الشحنة" style="width:30px;height:30px;font-size:14px;">✕</button>
+        </div>
+        <div class="shipmentFormBoxGrid">
+          <div>
+            <label class="label">اسم المنتج</label>
+            <input class="input" name="shipProductName" placeholder="مثال: حذاء نايك" value="${escapeHtml(shipment?.productName || '')}">
+          </div>
+          <div>
+            <label class="label">رابط الشحن</label>
+            <input class="input ltr" name="shipUrl" type="url" placeholder="https://..." value="${escapeHtml(shipment?.shippingUrl || '')}">
+          </div>
+          <div>
+            <label class="label">رقم الطلب</label>
+            <input class="input" name="shipOrderNumber" placeholder="#12345" value="${escapeHtml(shipment?.orderNumber || '')}">
+          </div>
+          <div>
+            <label class="label">رقم التتبع</label>
+            <input class="input" name="shipTracking" placeholder="TRACK123" value="${escapeHtml(shipment?.trackingNumber || '')}">
+          </div>
+          <div class="wide2">
+            <label class="label">الحالة</label>
+            <select name="shipStatus">${statusOpts}</select>
+          </div>
+        </div>
+      `;
+      container.appendChild(box);
+    }
+
+    function removeShipmentBox(btn) {
+      const box = btn.closest('.shipmentFormBox');
+      if (box) box.remove();
+      const container = document.getElementById('shipmentsContainer');
+      if (container) {
+        Array.from(container.children).forEach((child, i) => {
+          const titleEl = child.querySelector('.shipmentFormBoxTitle');
+          if (titleEl) titleEl.textContent = `شحنة ${i + 1}`;
+        });
+      }
+    }
+
+    function readShipments() {
+      const container = document.getElementById('shipmentsContainer');
+      if (!container) return [];
+      return Array.from(container.children).map(box => ({
+        id: box.dataset.shipmentId || uid(),
+        productName: (box.querySelector('[name="shipProductName"]')?.value || '').trim(),
+        shippingUrl: (box.querySelector('[name="shipUrl"]')?.value || '').trim(),
+        orderNumber: (box.querySelector('[name="shipOrderNumber"]')?.value || '').trim(),
+        trackingNumber: (box.querySelector('[name="shipTracking"]')?.value || '').trim(),
+        status: box.querySelector('[name="shipStatus"]')?.value || 'purchased',
+      })).filter(s => s.productName || s.shippingUrl || s.trackingNumber);
     }
 
     function renderOrdersStatusOptions() {
@@ -6328,7 +6973,8 @@ ${order.intlTracking}`;
       renderOrdersStatusOptions();
       const orders = Array.isArray(state.orders) ? state.orders : [];
       const search = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
-      const filtered = !search ? orders : orders.filter(o => [o.customerName, o.customerShortTitle, o.orderNumber, o.sellerOrderNumber, o.localTracking, o.intlTracking, o.carrier, o.notes]
+      const notesText = o => Array.isArray(o.notes) ? o.notes.map(n => n.text || '').join(' ') : String(o.notes || '');
+      const filtered = !search ? orders : orders.filter(o => [o.customerName, o.customerShortTitle, o.orderNumber, o.sellerOrderNumber, o.localTracking, o.intlTracking, notesText(o)]
         .some(v => String(v || '').toLowerCase().includes(search)));
 
       const alerts = orders.map(orderAlertInfo).filter(Boolean);
@@ -6356,70 +7002,82 @@ ${order.intlTracking}`;
         `;
       }).join('');
     }
-
-    function renderOrderCard(order) {
+            function renderOrderCard(order) {
       const alert = orderAlertInfo(order);
       const cardClass = alert?.level === 'danger' ? 'sellerFollowup' : alert ? 'needsAttention' : '';
       const statusOptions = ORDER_STATUSES.map(s => `<option value="${s.id}" ${order.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('');
-      const orderProducts = Array.isArray(order.products) && order.products.length
-        ? order.products
-        : (order.productLink ? [{ name: order.customerShortTitle || 'المنتج', link: order.productLink }] : []);
-      const productLink = order.productLink ? `<a href="${escapeHtml(order.productLink)}" target="_blank" rel="noopener">رابط المنتج</a>` : `<button type="button" onclick="toast('لا يوجد رابط منتج')">رابط المنتج</button>`;
-      const intlTrackingLink = order.intlTracking ? `<a class="trackingLink" href="${escapeHtml(order.intlTracking)}" target="_blank" rel="noopener">فتح الرابط</a>` : '—';
-      const orderProductsHtml = orderProducts.length ? `
-        <div class="orderProductsList">
-          ${orderProducts.map((prod, idx) => `
-            <div class="orderProductRow">
-              <b>${idx + 1}. ${escapeHtml(prod.name || 'منتج بدون اسم')}</b>
-              ${prod.link ? `<a href="${escapeHtml(prod.link)}" target="_blank" rel="noopener">${escapeHtml(prod.link)}</a>` : `<span style="color: var(--muted2);">لا يوجد رابط</span>`}
+      const shippingCustomerHtml = Number(order.indirectShippingCustomer || 0) > 0
+        ? `<span><b>سعر الشحن</b>${fmtMoney(order.indirectShippingCustomer)} ر.س</span>`
+        : '';
+      const orderProductUrls = uniqueList(
+        (Array.isArray(order.products) && order.products.length ? order.products : (order.productLink ? [{ link: order.productLink }] : []))
+          .map(prod => prod.link)
+      );
+      const productUrlsHtml = orderProductUrls.length ? `
+        <div class="orderCardProductLinks">
+          ${orderProductUrls.map(link => `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" class="orderCardProductLink" title="${escapeHtml(link)}">${escapeHtml(compactUrlLabel(link))}</a>`).join('')}
+        </div>
+      ` : '';
+      const orderShipments = Array.isArray(order.shipments) ? order.shipments : [];
+      const shipmentsKanbanHtml = orderShipments.length ? `
+        <div class="shipmentPillsRow">
+          ${orderShipments.map(s => `
+            <div class="shipmentPill">
+              ${s.shippingUrl
+                ? `<a href="${escapeHtml(s.shippingUrl)}" target="_blank" rel="noopener">${escapeHtml(s.productName || 'رابط الشحن')}</a>`
+                : `<span class="shipNoLink">${escapeHtml(s.productName || 'شحنة')}</span>`}
+              <select class="shipStatusDropdown" onchange="updateShipmentStatus('${order.id}', '${s.id}', this.value)">
+                ${ORDER_STATUSES.map(st => `<option value="${st.id}" ${(s.status || 'purchased') === st.id ? 'selected' : ''}>${st.label}</option>`).join('')}
+              </select>
             </div>
           `).join('')}
         </div>
       ` : '';
-      const shippingCustomerHtml = Number(order.indirectShippingCustomer || 0) > 0
-        ? `<span><b>سعر الشحن المحسوب للعميل</b>${fmtMoney(order.indirectShippingCustomer)} ر.س</span>`
-        : '';
       return `
         <article class="orderCard ${cardClass}">
-          <div class="orderCardTop">
-            <div class="orderCustomer">
-              <b>${escapeHtml(order.customerName) || 'عميل بدون اسم'}</b>
-            </div>
-            <span class="orderLastUpdatePill">${humanLastUpdateLabel(order.statusUpdatedAt || order.purchaseDate || order.createdAt)}</span>
+          <div class="orderCustomerTitle">
+            👤 ${escapeHtml(order.customerName) || 'بدون اسم'}
           </div>
-
+          <div class="orderLastUpdatePill">
+            ⏱ ${humanLastUpdateLabel(order.statusUpdatedAt || order.purchaseDate)}
+          </div>
+          ${productUrlsHtml}
+          ${shipmentsKanbanHtml}
           <details class="orderCardDetails">
             <summary>عرض البطاقة كاملة</summary>
 
             ${alert ? `<div class="orderAlert ${alert.level === 'danger' ? 'danger' : ''}">${escapeHtml(alert.text)}</div>` : ''}
 
             <div class="orderMetaGrid">
-              <span><b>عنوان مختصر</b>${escapeHtml(order.customerShortTitle) || '—'}</span>
-              <span><b>رقم طلب الموقع</b>${escapeHtml(order.sellerOrderNumber) || '—'}</span>
-              <span><b>تتبع محلي</b>${escapeHtml(order.localTracking) || '—'}</span>
-              <span><b>رابط التتبع الدولي</b>${intlTrackingLink}</span>
+              <span><b>العنوان الوطني</b>${escapeHtml(order.customerShortTitle) || '—'}</span>
+              <span><b>تاريخ الطلب</b>${escapeHtml(String(order.purchaseDate || '').slice(0, 10)) || '—'}</span>
               <span><b>آخر تحديث</b>${escapeHtml(String(order.statusUpdatedAt || '').slice(0, 10)) || '—'}</span>
-              <span><b>شركة الشحن</b>${escapeHtml(order.carrier) || '—'}</span>
               ${shippingCustomerHtml}
             </div>
 
-            ${orderProductsHtml}
-
-            ${order.notes ? `<div class="orderNote">${escapeHtml(order.notes)}</div>` : ''}
+            ${(() => {
+              if (Array.isArray(order.notes) && order.notes.length) {
+                const tags = order.notes.map(n => {
+                  const d = new Date(n.createdAt);
+                  const t = isNaN(d.getTime()) ? '' : (d.toLocaleDateString('ar-SA', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }));
+                  return `<span class="orderNoteTagCard"><span class="noteTagText" title="${escapeHtml(n.text)}">${escapeHtml(n.text)}</span><small style="color:var(--muted2);font-size:9px;flex-shrink:0">${escapeHtml(t)}</small></span>`;
+                }).join('');
+                return `<div class="orderNoteTagsWrap">${tags}</div>`;
+              }
+              if (order.notes && typeof order.notes === 'string') return `<div class="orderNote">${escapeHtml(order.notes)}</div>`;
+              return '';
+            })()}
 
             <select class="orderStatusSelect" onchange="changeOrderStatus('${order.id}', this.value)">${statusOptions}</select>
 
-            <div class="orderQuickLinks">
-              ${productLink}
-              <button type="button" onclick="openOrderWhatsapp('${order.id}')">فتح واتساب</button>
-            </div>
-
             <div class="orderCardActions">
+              <button class="smallBtn" type="button" onclick="copyOrder('${order.id}')">نسخ الطلب</button>
+              <button class="smallBtn" type="button" onclick="openOrderWhatsapp('${order.id}')">فتح واتساب</button>
               <button class="smallBtn" onclick="refreshOrderUpdate('${order.id}')">تحديث اليوم</button>
               <button class="smallBtn" onclick="editOrder('${order.id}')">تعديل</button>
               <button class="smallBtn" onclick="copyCustomerStatus('${order.id}')">إرسال رابط الشحن للعميل</button>
               ${order.status === 'purchased' ? `<button class="smallBtn gold" onclick="copySellerEmail('${order.id}')">إيميل للبائع</button>` : `<button class="smallBtn" onclick="copySellerEmail('${order.id}')">نسخ إيميل</button>`}
-              <button class="smallBtn" onclick="deleteOrder('${order.id}')">حذف الطلب</button>
+              <button class="smallBtn" onclick="deleteOrderAction('${order.id}')">حذف الطلب</button>
             </div>
           </details>
         </article>
@@ -6453,78 +7111,6 @@ ${order.intlTracking}`;
     }
 
     function norm(v) { return String(v ?? '').toLowerCase().replace(/\s+/g, ' ').trim(); }
-    function headerHas(h, words) { return words.some(w => h.includes(w)); }
-
-    function findHeader(rows, type) {
-      const limit = Math.min(rows.length, 30);
-      for (let r = 0; r < limit; r++) {
-        const headers = rows[r].map(norm);
-        const weightCol = headers.findIndex(h => headerHas(h, ['weight', 'weights', 'lb', 'lbs', 'pound', 'kg', 'كيلو', 'كجم', 'وزن', 'رطل']));
-        if (type === 'myus') {
-          const cols = {
-            budget: headers.findIndex(h => headerHas(h, ['budget', 'economy', 'budget economy', 'myus budget', 'اقتصادي'])),
-            aramex: headers.findIndex(h => headerHas(h, ['aramex', 'myus aramex', 'ارامكس'])),
-            fedex: headers.findIndex(h => headerHas(h, ['fedex', 'fedex priority', 'myus fedex', 'فيديكس'])),
-            dhl: headers.findIndex(h => headerHas(h, ['dhl', 'dhl express', 'myus dhl', 'دي اتش ال']))
-          };
-          if (weightCol >= 0 && Object.values(cols).filter(v => v >= 0).length >= 1) {
-            const headerText = headers[weightCol] || '';
-            return { startRow: r + 1, weightCol, cols, weightUnit: headerHas(headerText, ['kg', 'كيلو', 'كجم']) ? 'kg' : 'lb' };
-          }
-        } else {
-          const priceCol = headers.findIndex((h, idx) => idx !== weightCol && headerHas(h, ['price', 'rate', 'cost', 'shipping', 'sar', 'riyals', 'ريال', 'سعر', 'تكلفة', 'الشحن']));
-          if (weightCol >= 0 && priceCol >= 0) {
-            const headerText = headers[weightCol] || '';
-            return { startRow: r + 1, weightCol, priceCol, weightUnit: headerHas(headerText, ['kg', 'كيلو', 'كجم']) ? 'kg' : 'lb' };
-          }
-        }
-      }
-      return null;
-    }
-
-    function findFallback(rows, type) {
-      for (let r = 0; r < rows.length; r++) {
-        const nums = rows[r].map((v, j) => ({ j, n: cleanNumber(v) })).filter(x => x.n != null);
-        if (type === 'myus' && nums.length >= 5 && nums[0].n > 0 && nums[0].n <= 500) {
-          return { startRow: r, weightCol: nums[0].j, cols: { budget: nums[1].j, aramex: nums[2].j, fedex: nums[3].j, dhl: nums[4].j }, weightUnit: 'lb' };
-        }
-        if (type === 'shopship' && nums.length >= 2 && nums[0].n > 0 && nums[0].n <= 500) {
-          return { startRow: r, weightCol: nums[0].j, priceCol: nums[1].j, weightUnit: 'lb' };
-        }
-      }
-      return null;
-    }
-
-    function fileWeightToLb(n, unit) { return Math.max(1, Math.ceil(unit === 'kg' ? n * KG_TO_LB : n)); }
-
-    function parseRowsToRates(rows, type) {
-      const cfg = findHeader(rows, type) || findFallback(rows, type);
-      if (!cfg) throw new Error('لم أتعرف على أعمدة الوزن والسعر في الملف.');
-      const rates = {};
-      for (let r = cfg.startRow; r < rows.length; r++) {
-        const row = rows[r];
-        const w = cleanNumber(row[cfg.weightCol]);
-        if (!w || w <= 0) continue;
-        const lb = fileWeightToLb(w, cfg.weightUnit);
-        if (type === 'myus') {
-          const item = {};
-          Object.keys(cfg.cols).forEach(key => {
-            const col = cfg.cols[key];
-            if (col >= 0) {
-              const val = cleanNumber(row[col]);
-              if (val != null && val >= 0) item[key] = val;
-            }
-          });
-          if (Object.keys(item).length) rates[lb] = { ...(rates[lb] || {}), ...item };
-        } else {
-          const val = cleanNumber(row[cfg.priceCol]);
-          if (val != null && val >= 0) rates[lb] = val;
-        }
-      }
-      const count = Object.keys(rates).length;
-      if (!count) throw new Error('لم أجد أسعار صالحة داخل الملف.');
-      return { rates, count };
-    }
 
     async function rowsFromFile(file) {
       if (!window.XLSX) throw new Error('تعذر تحميل مكتبة Excel. افتح الصفحة مع اتصال بالإنترنت');
@@ -6541,32 +7127,104 @@ ${order.intlTracking}`;
       return allRows;
     }
 
-    async function handleRateFile(file, type) {
-      if (!file) return;
-      try {
-        const rows = await rowsFromFile(file);
-        const parsed = parseRowsToRates(rows, type);
-        state.rateTables[type] = { fileName: file.name, updatedAt: new Date().toISOString(), rates: parsed.rates };
-        saveState();
-        render();
-        renderRateFileStatus();
-        toast(`تم حفظ ملف ${type === 'myus' ? 'MyUS' : 'Shop & Ship'} (${parsed.count} وزن)`);
-      } catch (err) {
-        toast(err.message || 'تعذر قراءة الملف');
-      }
-      const input = document.getElementById(type === 'myus' ? 'myusRateFile' : 'shopshipRateFile');
-      if (input) input.value = '';
-    }
-
+    // Reflects ShippingProvider's cache status in the settings modal. Kept
+    // under its historical name/element ids; the meaning shifted from
+    // "file uploaded" to "Supabase data cached" when Excel upload was removed.
     function renderRateFileStatus() {
       const myus = document.getElementById('myusFileStatus');
       const shop = document.getElementById('shopshipFileStatus');
-      if (myus) myus.textContent = state.rateTables?.myus
-        ? `✅ مرفوع: ${state.rateTables.myus.fileName} (${Object.keys(state.rateTables.myus.rates || {}).length} وزن)`
-        : '⚠️ لم يتم رفع ملف بعد — يلزم رفع الملف لعرض أسعار MyUS';
-      if (shop) shop.textContent = state.rateTables?.shopship
-        ? `✅ مرفوع: ${state.rateTables.shopship.fileName} (${Object.keys(state.rateTables.shopship.rates || {}).length} وزن)`
-        : '⚠️ لم يتم رفع ملف بعد — يلزم رفع الملف لعرض أسعار Shop & Ship';
+      const health = document.getElementById('shippingHealthStatus');
+      const loading = ShippingProvider.isLoading();
+      if (myus) myus.textContent = isMyusUploaded()
+        ? '✅ أسعار MyUS محمّلة من قاعدة البيانات'
+        : loading ? '⏳ جاري التحميل من قاعدة البيانات...' : '⚠️ تعذر تحميل أسعار MyUS';
+      if (shop) shop.textContent = isShopshipUploaded()
+        ? '✅ أسعار Shop & Ship محمّلة من قاعدة البيانات'
+        : loading ? '⏳ جاري التحميل من قاعدة البيانات...' : '⚠️ تعذر تحميل أسعار Shop & Ship';
+      if (health) health.textContent = `حالة نظام الشحن: ${SHIPPING_HEALTH_LABELS[ShippingProvider.getHealthState()] || ShippingProvider.getHealthState()}`;
+      renderEmergencyImportVisibility();
+    }
+
+    const SHIPPING_HEALTH_LABELS = {
+      loading: '⏳ جاري التحميل',
+      ready: '✅ متصل (Supabase)',
+      retrying: '🔁 إعادة المحاولة',
+      offline: '📴 غير متصل (بيانات محفوظة محلياً)',
+      failed: '⛔ تعذر التحميل',
+    };
+
+    // Emergency Import is Developer-Mode-only and hidden by default -- see
+    // legacy/excel_import.js. This just toggles visibility + populates the
+    // per-carrier dropdown; the actual import logic is wired in the two
+    // file input listeners further down.
+    function renderEmergencyImportVisibility() {
+      const section = document.getElementById('emergencyImportSection');
+      if (!section) return;
+      const enabled = ShippingProvider.isEmergencyImportEnabled();
+      section.classList.toggle('hidden', !enabled);
+      if (!enabled) return;
+
+      const select = document.getElementById('emergencyImportJsonCarrier');
+      if (select && !select.dataset.populated) {
+        select.innerHTML = CARRIERS.map(c => `<option value="${c.id}">${escapeHtml(c.label)}</option>`).join('');
+        select.dataset.populated = '1';
+      }
+    }
+
+    // Shared scaffolding for both Emergency Import handlers below: status
+    // text, toast, re-render, and clearing the file input are identical
+    // regardless of which format was imported -- only `doImport` differs.
+    // This is the ONLY place in the app that ever dynamically imports
+    // legacy/excel_import.js, and only when a Developer-Mode user actually
+    // selects a file here.
+    async function runEmergencyImport(inputId, doImport) {
+      const statusEl = document.getElementById('emergencyImportStatus');
+      try {
+        const legacy = await import('./legacy/excel_import.js');
+        const successMessage = await doImport(legacy);
+        statusEl.textContent = `✅ ${successMessage}`;
+        toast('تم الاستيراد الطارئ بنجاح');
+        render();
+      } catch (err) {
+        statusEl.textContent = `⚠️ ${err.message || 'تعذر استيراد الملف'}`;
+        toast(err.message || 'تعذر استيراد الملف الطارئ');
+      }
+      const input = document.getElementById(inputId);
+      if (input) input.value = '';
+    }
+
+    async function handleEmergencyImportLegacyFile(file) {
+      if (!file) return;
+      await runEmergencyImport('emergencyImportLegacyFile', async (legacy) => {
+        const type = document.getElementById('emergencyImportLegacyType').value;
+        const rows = await legacy.rowsFromWorkbookFile(file);
+        const { rates, count } = legacy.parseRowsToLegacyRates(rows, type, KG_TO_LB);
+
+        const carrierDefs = CARRIERS
+          .filter(c => c.source === type)
+          .map(c => ({ legacyKey: c.id, warehouseCode: c.warehouseCode, carrierCode: c.carrierCode }));
+        const tables = legacy.toRateTablesByCarrier(rates, type, carrierDefs);
+
+        tables.forEach(({ warehouseCode, carrierCode, table }) => {
+          ShippingProvider.importEmergencyTable(warehouseCode, carrierCode, table);
+        });
+
+        return `تم الاستيراد الطارئ: ${count} وزن عبر ${tables.length} ناقل (${file.name})`;
+      });
+    }
+
+    async function handleEmergencyImportJsonFile(file) {
+      if (!file) return;
+      await runEmergencyImport('emergencyImportJsonFile', async (legacy) => {
+        const carrierId = document.getElementById('emergencyImportJsonCarrier').value;
+        const carrier = CARRIERS.find(c => c.id === carrierId);
+        if (!carrier) throw new Error('لم يتم اختيار ناقل صالح.');
+
+        const table = await legacy.parseJsonRateFile(file);
+        ShippingProvider.importEmergencyTable(carrier.warehouseCode, carrier.carrierCode, table);
+
+        return `تم الاستيراد الطارئ لـ ${carrier.label} (${Object.keys(table).length} وزن) من ${file.name}`;
+      });
     }
 
     /* Event Listeners */
@@ -6645,12 +7303,24 @@ ${order.intlTracking}`;
       copyText(document.getElementById('waText').textContent, 'تم نسخ رسالة واتساب');
     });
 
+    // No phone number attached on purpose -- wa.me/?text= (no number) opens
+    // WhatsApp and lets the user pick the contact themselves, with the
+    // message already filled in and ready to send.
+    document.getElementById('openWa').addEventListener('click', () => {
+      const text = document.getElementById('waText').textContent;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    });
+
     const saveOrderBtn = document.getElementById('saveOrderBtn');
     if (saveOrderBtn) saveOrderBtn.addEventListener('click', saveOrderFromForm);
     const resetOrderBtn = document.getElementById('resetOrderForm');
     if (resetOrderBtn) resetOrderBtn.addEventListener('click', resetOrderForm);
     const fillOrderFromCalcBtn = document.getElementById('fillOrderFromCalcBtn');
     if (fillOrderFromCalcBtn) fillOrderFromCalcBtn.addEventListener('click', fillOrderFromCalculator);
+    const addNoteBtn = document.getElementById('addNoteBtn');
+    if (addNoteBtn) addNoteBtn.addEventListener('click', addOrderNote);
+    const orderNoteInput = document.getElementById('orderNoteInput');
+    if (orderNoteInput) orderNoteInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addOrderNote(); } });
     const orderSearch = document.getElementById('orderSearch');
     if (orderSearch) orderSearch.addEventListener('input', renderOrders);
     const scrollToOrderForm = document.getElementById('scrollToOrderForm');
@@ -6693,29 +7363,23 @@ ${order.intlTracking}`;
       toast('تم حفظ الإعدادات');
     });
 
-    document.getElementById('myusRateFile').addEventListener('change', e => handleRateFile(e.target.files[0], 'myus'));
-    document.getElementById('shopshipRateFile').addEventListener('change', e => handleRateFile(e.target.files[0], 'shopship'));
     const exportSavedWeightsBtn = document.getElementById('exportSavedWeights');
     if (exportSavedWeightsBtn) exportSavedWeightsBtn.addEventListener('click', exportSavedWeightsExcel);
     const savedWeightsImportFile = document.getElementById('savedWeightsImportFile');
     if (savedWeightsImportFile) savedWeightsImportFile.addEventListener('change', e => importSavedWeightsFile(e.target.files[0]));
 
-    document.getElementById('clearRateFiles').addEventListener('click', () => {
-      state.rateTables = { myus: null, shopship: null };
-      saveState();
-      render();
-      renderRateFileStatus();
-      toast('تم حذف ملفات أسعار الشحن المرفوعة');
-    });
+    const emergencyImportLegacyFile = document.getElementById('emergencyImportLegacyFile');
+    if (emergencyImportLegacyFile) emergencyImportLegacyFile.addEventListener('change', e => handleEmergencyImportLegacyFile(e.target.files[0]));
+    const emergencyImportJsonFile = document.getElementById('emergencyImportJsonFile');
+    if (emergencyImportJsonFile) emergencyImportJsonFile.addEventListener('change', e => handleEmergencyImportJsonFile(e.target.files[0]));
 
-    document.getElementById('resetAll').addEventListener('click', () => {
+    document.getElementById('resetAll').addEventListener('click', async () => {
       if (!confirm('متأكد من مسح كل البيانات؟')) return;
       localStorage.removeItem(storageKey);
       state = {
         products: [productTemplate()],
         commissionConfig: { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION },
         restrictionFeeConfig: defaultRestrictionFeeConfig(),
-        rateTables: { myus: null, shopship: null },
         savedWeights: [],
         orders: [],
         carrierDiscount: DEFAULT_CARRIER_DISCOUNT,
@@ -6724,6 +7388,7 @@ ${order.intlTracking}`;
         orderType: ''
       };
       modal.classList.remove('show');
+      await loadOrders();
       render();
       toast('تم مسح جميع البيانات');
     });
@@ -6751,15 +7416,224 @@ ${order.intlTracking}`;
     window.resetOrderTypeChoice = resetOrderTypeChoice;
     window.switchPage = switchPage;
     window.editOrder = editOrder;
-    window.deleteOrder = deleteOrder;
+    window.deleteOrderAction = deleteOrderAction;
     window.changeOrderStatus = changeOrderStatus;
+    window.updateShipmentStatus = updateShipmentStatus;
     window.refreshOrderUpdate = refreshOrderUpdate;
     window.copySellerEmail = copySellerEmail;
     window.openOrderWhatsapp = openOrderWhatsapp;
     window.copyCustomerStatus = copyCustomerStatus;
     window.toast = toast;
 
-    render();
-  </script>
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://avmlfadkiyyqbwwkfpkb.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_krgGfN0B1xi66IpNmFHP2w_FwabU7HZ";
+
+const { createClient } = supabase;
+
+const db = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+// Exposed so the module script at the bottom of this file (which builds
+// ShippingProvider) can reuse this exact client instance instead of
+// creating a second one. Module scripts don't share this script's lexical
+// scope, only actual `window` properties.
+window.db = db;
+
+// All shipping-layer business logic (repository, provider, calculator,
+// cache, health check, retry strategy) now lives in src/shipping/ and is
+// loaded via the <script type="module"> block at the end of this file,
+// which constructs window.ShippingProvider. This script only ever calls
+// that single object -- see lookupShipping()/isMyusUploaded()/
+// isShopshipUploaded() earlier in this file, and initApp()/
+// retryLoadShippingRates() below.
+
+/* ======= Orders Data Layer (Supabase) =======
+   This is the ONLY place that communicates with Supabase for orders.
+   payload stores the entire order object as-is; state.orders is always
+   derived from the rows returned here. */
+
+async function loadOrders() {
+  const { data, error } = await db
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    toast('تعذر تحميل الطلبات من قاعدة البيانات');
+    return;
+  }
+
+  state.orders = (data || []).map(row => row.payload);
+}
+
+async function createOrder(order) {
+  const { data, error } = await db
+    .from('orders')
+    .insert([{ payload: order }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+
+  return data;
+}
+
+async function updateOrder(order) {
+  const { data, error } = await db
+    .from('orders')
+    .update({ payload: order, updated_at: new Date().toISOString() })
+    .eq('payload->>id', order.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+
+  return data;
+}
+
+async function deleteOrder(id) {
+  const { error } = await db
+    .from('orders')
+    .delete()
+    .eq('payload->>id', id);
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+/* ======= Saved Weights Data Layer (Supabase) =======
+   This is the ONLY place that communicates with Supabase for saved product
+   weights. Matching (both product URL and product name) happens in-memory
+   against state.savedWeights -- see findSavedWeightMatch(). */
+
+async function loadSavedWeights() {
+  const { data, error } = await db
+    .from('product_weights')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    toast('تعذر تحميل الأوزان المحفوظة من قاعدة البيانات');
+    return;
+  }
+
+  state.savedWeights = (data || []).map(row => ({
+    id: row.id,
+    url: row.product_url,
+    name: row.product_name,
+    weight: row.weight_lb,
+    updatedAt: row.updated_at
+  }));
+}
+
+async function createSavedWeightRow({ url, name, weight }) {
+  const { data, error } = await db
+    .from('product_weights')
+    .insert([{ product_url: url, product_name: name, weight_lb: weight }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+
+  return data;
+}
+
+async function updateSavedWeightRow(id, { url, name, weight }) {
+  const { data, error } = await db
+    .from('product_weights')
+    .update({ product_url: url, product_name: name, weight_lb: weight, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+
+  return data;
+}
+
+async function deleteSavedWeightRow(id) {
+  const { error } = await db
+    .from('product_weights')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+  // Every (warehouse, carrier) pair CARRIERS currently uses -- computed from
+  // the single CARRIERS array, so a future carrier added there is preloaded
+  // automatically with no other change required.
+  const SHIPPING_PAIRS_TO_PRELOAD = CARRIERS.map(c => [c.warehouseCode, c.carrierCode]);
+
+  async function retryLoadShippingRates() {
+    await ShippingProvider.retry(SHIPPING_PAIRS_TO_PRELOAD);
+    render(); // render() already calls renderTopBanner() internally
+    renderRateFileStatus();
+  }
+  window.retryLoadShippingRates = retryLoadShippingRates;
+
+  async function initApp() {
+
+  await Promise.all([
+    loadOrders(),
+    loadSavedWeights(),
+    ShippingProvider.boot(SHIPPING_PAIRS_TO_PRELOAD),
+  ]);
+
+  render();
+
+}
+
+// NOTE: initApp() is NOT called here. It's called from the <script type="module">
+// block below, once window.ShippingProvider exists -- see src/shipping/index.js.
+// initApp()'s body above still just references the bare global `ShippingProvider`;
+// JS resolves that at call time, so this ordering is safe.
+
+console.log("Supabase Connected", db);
+</script>
+
+<script type="module">
+
+console.log("MODULE START");
+
+import { ShippingProvider as ShippingProviderClass } from './src/shipping/index.js';
+
+console.log("IMPORT OK");
+
+window.ShippingProvider = new ShippingProviderClass(window.db);
+
+console.log("INSTANCE CREATED", window.ShippingProvider);
+
+window.initApp();
+
+console.log("INIT DONE");
+
+</script>
+
 </body>
 </html>

@@ -1,0 +1,6 @@
+{
+  "name": "shipping-website",
+  "private": true,
+  "type": "module",
+  "description": "Static site (GitHub Pages). No build step. This file exists only so Node tooling (tests, linters) resolves src/shipping and legacy as ES modules -- the browser ignores it entirely."
+}

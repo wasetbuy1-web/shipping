@@ -613,52 +613,125 @@
       line-height: 1.35;
     }
 
+    /* Two aligned columns -- [struck old price][new price] -- over two rows:
+       USD on top (primary), SAR below (secondary). LTR so the old price sits
+       on the left of the new one regardless of the card's RTL direction.
+       min-width on each column keeps the numbers forming clean vertical
+       columns across every card; max-content lets unusually long values grow
+       instead of clipping. */
     .carrierPrice {
-      text-align: left;
       flex-shrink: 0;
+      direction: ltr;
+      display: grid;
+      grid-template-columns: minmax(52px, max-content) minmax(68px, max-content);
+      column-gap: 7px;
+      row-gap: 1px;
+      align-items: baseline;
+      justify-content: end;
+      text-align: right;
     }
 
-    .carrierPrice b {
-      display: block;
-      font-size: 14px;
+    /* USD is the strongest element in the block. */
+    .carrierPrice .priceUsd {
+      font-size: 15px;
       font-weight: 900;
       color: var(--primary2);
       font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      letter-spacing: -.2px;
+      white-space: nowrap;
     }
 
-    .carrierPrice small {
-      display: block;
-      font-size: 10px;
+    /* SAR reads as the same price block, one step quieter. */
+    .carrierPrice .priceSar {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    /* Old prices never compete with the new ones. */
+    .carrierPrice .priceOld {
+      font-size: 9.5px;
+      font-weight: 700;
       color: var(--muted2);
-      direction: ltr;
-      margin-top: 2px;
+      text-decoration: line-through;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      opacity: .8;
+      white-space: nowrap;
+    }
+
+    /* When NO carrier in the list has a discount, collapse the old-price
+       column so it stops reserving dead space. Deliberately scoped to the
+       whole list rather than the single card: in a mixed list (only FedEx/DHL
+       discounted) the column stays, so new prices keep lining up across every
+       card. Falls back harmlessly to the reserved column without :has(). */
+    .carrierList:not(:has(.priceOld:not(:empty))) .carrierPrice:not(.feeBreakdown):not(.blocked) {
+      grid-template-columns: 0 minmax(68px, max-content);
+      column-gap: 0;
+    }
+
+    /* Official Saudi Riyal glyph -- inline SVG, inherits colour, scales with
+       font-size. viewBox is 1124.14 x 1256.39, hence the 0.895 width ratio. */
+    .riyalIcon {
+      height: .82em;
+      width: .734em;
+      display: inline-block;
+      vertical-align: -.05em;
+      fill: currentColor;
+      flex-shrink: 0;
     }
 
     .discountOld {
       text-decoration: line-through;
       color: var(--muted2);
-      font-size: 10px;
+      font-size: 9.5px;
       direction: ltr;
-      display: block;
-      margin-bottom: 1px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      opacity: .8;
     }
 
+    /* Restricted carriers stay fully selectable (internal tool) -- the red
+       tint + warning are informational only, not a hard block. */
     .carrierItem.blockedCarrier {
       border-color: rgba(239, 68, 68, .26);
       background: linear-gradient(135deg, rgba(239, 68, 68, .10), rgba(0, 0, 0, .18));
-      cursor: not-allowed;
-      opacity: .94;
     }
 
     .carrierItem.blockedCarrier:hover {
-      transform: none;
       border-color: rgba(239, 68, 68, .32);
-      background: linear-gradient(135deg, rgba(239, 68, 68, .12), rgba(0, 0, 0, .18));
+      background: linear-gradient(135deg, rgba(239, 68, 68, .13), rgba(0, 0, 0, .18));
     }
 
-    .carrierItem.blockedCarrier .carrierLabel small {
+    /* Selected + restricted: green ring signals the pick, red tint stays. */
+    .carrierItem.blockedCarrier.active {
+      border-color: var(--primary);
+      box-shadow: 0 6px 18px rgba(18, 161, 115, .18);
+    }
+
+    .carrierItem.blockedCarrier .carrierWarn {
       color: #fca5a5;
       font-weight: 800;
+    }
+
+    .carrierRank.blockedRank {
+      background: rgba(239, 68, 68, .14);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, .34);
+    }
+
+    /* The itemised fee breakdown and the blocked label are single-column,
+       RTL lists -- they opt out of the two-column USD/SAR price grid. */
+    .carrierPrice.blocked,
+    .carrierPrice.feeBreakdown {
+      grid-template-columns: minmax(0, 1fr);
+      direction: rtl;
+      text-align: right;
+      row-gap: 0;
     }
 
     .carrierPrice.blocked b {
@@ -668,6 +741,17 @@
 
     .carrierPrice.feeBreakdown {
       min-width: 112px;
+    }
+
+    .carrierPrice.feeBreakdown small {
+      display: block;
+      direction: ltr;
+      text-align: right;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.3;
     }
 
     .carrierPrice.feeBreakdown span,
@@ -1873,7 +1957,9 @@
       .carrierItem { padding: 10px 12px; min-height: 60px; }
       .carrierLabel b { font-size: 12.5px; }
       .carrierLabel small { font-size: 10px; }
-      .carrierPrice b { font-size: 13px; }
+      .carrierPrice .priceUsd { font-size: 14px; }
+      .carrierPrice .priceSar { font-size: 11.5px; }
+      .carrierPrice.feeBreakdown small { font-size: 10.5px; }
 
       .discountChoices { grid-template-columns: repeat(5, 1fr); gap: 5px; }
       .discountChoice { font-size: 11px; min-height: 34px; }
@@ -2223,8 +2309,12 @@
       font-size: 10px;
     }
 
-    .carrierPrice b {
-      font-size: 13px;
+    .carrierPrice .priceUsd {
+      font-size: 14px;
+    }
+
+    .carrierPrice .priceSar {
+      font-size: 11.5px;
     }
 
     /* التنبيهات ورفع الملفات */
@@ -2494,11 +2584,12 @@
       position: relative;
     }
 
+    /* Cheapest carrier keeps ONLY its "الأرخص" badge + full-width layout.
+       The green "selected" background is reserved for .active alone, so the
+       cheapest and the user's pick never both look active at once. */
     .carrierItem.bestCarrier {
       grid-column: 1 / -1;
       min-height: 58px;
-      border-color: var(--primary);
-      background: linear-gradient(135deg, rgba(18, 161, 115, .18), rgba(22, 192, 138, .08));
     }
 
     .carrierRank {
@@ -3022,11 +3113,32 @@
       text-align: center;
     }
 
+    /* Product rows are pills (name + own status dropdown), so they stretch
+       to full card width instead of shrinking to the link text. */
     .orderCardProductLinks {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      align-items: center;
+      display: grid;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    /* Product name takes the remaining width and ellipsises; the status
+       dropdown keeps a fixed width so names line up across every card.
+       Scoped to product pills so shipment pills keep their own sizing. */
+    .orderCardProductLinks .shipmentPill {
+      grid-template-columns: minmax(0, 1fr) 106px;
+    }
+
+    .orderCardProductLinks .shipStatusDropdown {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+    }
+
+    /* Names are often Arabic -- align to the reading direction, unlike the
+       LTR shipping URLs in shipment pills. */
+    .orderCardProductLinks .shipmentPill a,
+    .orderCardProductLinks .shipmentPill .shipNoLink {
+      text-align: start;
     }
 
     .orderCardProductLink {
@@ -4712,12 +4824,26 @@
     ];
 
     const ADDITIONAL_FEE_TYPES = [
-      { value: 'none', label: 'لا يوجد' },
-      { value: 'volumetric', label: 'وزن حجمي' },
-      { value: 'perfume', label: 'عطورات' },
-      { value: 'battery', label: 'منتج يحتوي على بطارية' },
-      { value: 'paint', label: 'دهانات' },
+      { value: 'none', label: 'بدون رسوم' },
+      { value: 'usd9', label: '9$' },
+      { value: 'usd30', label: '30$' },
+      { value: 'custom', label: 'مخصص' },
     ];
+
+    // Manual extra shipping fee, expressed in USD then converted to SAR via the
+    // product's exchange rate. Applies to the shipping cost only -- never to the
+    // product price or the commission.
+    function manualAdditionalFeeUsd(p) {
+      if (!p) return 0;
+      if (p.additionalFee === 'usd9') return 9;
+      if (p.additionalFee === 'usd30') return 30;
+      if (p.additionalFee === 'custom') return parseFloat(p.additionalFeeAmount) || 0;
+      return 0;
+    }
+
+    function manualAdditionalFeeSar(p) {
+      return manualAdditionalFeeUsd(p) * (parseFloat(p?.exchangeRate) || 0);
+    }
 
     const PRODUCT_TYPES = ['إلكترونيات', 'هواتف وأجهزة لوحية', 'حواسيب ومكوناتها', 'ملابس', 'أحذية', 'حقائب', 'إكسسوارات', 'ساعات', 'مجوهرات', 'مستحضرات تجميل', 'عطور', 'كتب', 'ألعاب أطفال', 'ألعاب فيديو', 'أدوات منزلية', 'أدوات مطبخ', 'مكملات غذائية', 'قطع غيار سيارات', 'أدوات رياضية', 'أخرى'];
 
@@ -4979,9 +5105,12 @@
       return CARRIERS.map((carrier, originalIndex) => {
         const assessment = shippingAssessmentForCarrier(p, carrier, index);
         if (assessment.status === 'hidden') return null;
-        if (assessment.status === 'blocked') {
-          return includeBlocked ? { ...carrier, originalIndex, assessment, blocked: true, shipping: { price: 0, lb: 0, capped: false, priceUsd: 0 }, discount: 0, discountedPrice: 0, finalPrice: 0 } : null;
-        }
+        const blocked = assessment.status === 'blocked';
+        // Restricted carriers are still priced normally so their cost can be
+        // compared; they're only excluded from the default/cheapest pool
+        // (includeBlocked === false). The restriction is surfaced as a
+        // warning, never a hard block on selection.
+        if (blocked && !includeBlocked) return null;
         if (carrier.source === 'myus' && !isMyusUploaded()) return null;
         if (carrier.source === 'shopship' && !isShopshipUploaded()) return null;
         const shipping = lookupShipping(p.weight, p.weightUnit, carrier.id);
@@ -4989,7 +5118,7 @@
         const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
         const discountedPrice = shipping.price * (1 - discount / 100);
         const finalPrice = discountedPrice + (assessment.feeAmount || 0);
-        return { ...carrier, originalIndex, assessment, blocked: false, shipping, discount, discountedPrice, finalPrice };
+        return { ...carrier, originalIndex, assessment, blocked, shipping, discount, discountedPrice, finalPrice };
       }).filter(Boolean);
     }
 
@@ -5088,8 +5217,12 @@
         // onclick) as long as it's still a valid, priced, non-blocked
         // option; only fall back to the cheapest one when there's no
         // selection yet or the previous selection stopped being valid.
-        const options = sortedPricedCarrierOptionsForProduct(p, index, false);
-        const selected = options.find(o => o.id === p.carrierId) || options[0] || null;
+        // Include restricted carriers when resolving the *selected* option so
+        // a manually-picked restricted carrier drives the total, but fall back
+        // only to the cheapest non-restricted option.
+        const optionsAll = sortedPricedCarrierOptionsForProduct(p, index, true);
+        const options = optionsAll.filter(o => !o.blocked);
+        const selected = optionsAll.find(o => o.id === p.carrierId) || options[0] || null;
         if (selected) {
           p.carrierId = selected.id;
           shippingInfo = selected.shipping;
@@ -5102,7 +5235,7 @@
         }
       }
 
-      const manualAdditionalFeeAmount = (p.shippingType !== 'direct' && p.additionalFee !== 'none') ? (parseFloat(p.additionalFeeAmount) || 0) : 0;
+      const manualAdditionalFeeAmount = (p.shippingType !== 'direct') ? manualAdditionalFeeSar(p) : 0;
       const additionalFeeAmount = manualAdditionalFeeAmount + automaticExtraFeeAmount;
 
       return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: ['fedex', 'dhl', 'fedex_economy'].includes(p.carrierId) ? state.carrierDiscount : 0 };
@@ -5118,7 +5251,7 @@
         state.products.forEach((p, index) => {
           totalPrice += productPriceSar(p, index);
           totalLocalShipping += productLocalShippingSar(p);
-          totalFees += (p.additionalFee !== 'none') ? (parseFloat(p.additionalFeeAmount) || 0) : 0;
+          totalFees += manualAdditionalFeeSar(p);
           combinedWeightLb += productEnteredWeightLb(p);
         });
         combinedMyusShipping = getCombinedMyusShipping(combinedWeightLb);
@@ -5464,7 +5597,8 @@
         p.showAdditionalFees = false;
         p.localShippingCost = '';
       }
-      if (field === 'additionalFee' && value === 'none') {
+      if (field === 'additionalFee' && value !== 'custom') {
+        // Fixed presets (none / 9$ / 30$) don't use the manual amount field.
         p.additionalFeeAmount = '';
       }
 
@@ -5560,7 +5694,7 @@
             <div class="field" style="margin-top: 14px;">
               <label class="label">الرسوم الإضافية</label>
               <div class="collapsedFeeBox">
-                <span><b>لا يوجد</b> — مخفية حتى تحتاج لإضافة رسوم</span>
+                <span><b>بدون رسوم</b> — مخفية حتى تحتاج لإضافة رسوم</span>
                 <button class="smallBtn" onclick="toggleAdditionalFees('${p.id}', true)">إظهار</button>
               </div>
             </div>`;
@@ -5571,9 +5705,9 @@
               <select onchange="updateProduct('${p.id}', 'additionalFee', this.value)">
                 ${ADDITIONAL_FEE_TYPES.map(t => `<option value="${t.value}" ${p.additionalFee === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
               </select>
-              ${hasFee ? `
+              ${p.additionalFee === 'custom' ? `
                 <div style="margin-top: 8px;">
-                  <input class="input" type="number" inputmode="decimal" placeholder="مبلغ الرسوم بالريال" value="${p.additionalFeeAmount}" oninput="updateProduct('${p.id}', 'additionalFeeAmount', this.value, false)" onblur="render()">
+                  <input class="input" type="number" inputmode="decimal" placeholder="مبلغ الرسوم بالدولار" value="${p.additionalFeeAmount}" oninput="updateProduct('${p.id}', 'additionalFeeAmount', this.value, false)" onblur="render()">
                 </div>
               ` : ''}
               <div class="buttonRow" style="margin-top: 8px;">
@@ -5918,6 +6052,35 @@
       }).join('');
     }
 
+    // Official Saudi Riyal symbol (SAMA, 2025). Shipped as inline SVG rather
+    // than the U+20C1 character on purpose: no font on Windows (and most
+    // systems) carries that codepoint yet, so the character renders as a
+    // tofu box. The SVG inherits currentColor and scales with font-size.
+    const RIYAL_SVG = '<svg class="riyalIcon" viewBox="0 0 1124.14 1256.39" role="img" aria-label="ريال سعودي" focusable="false"><path d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z"/><path d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z"/></svg>';
+
+    // The carrier price block: USD is the primary line, SAR the secondary one,
+    // each showing [struck old price][new price] in two aligned columns. The
+    // old-price cells are always emitted (empty when there's no discount) so a
+    // discounted card and an undiscounted one are exactly the same height.
+    function carrierPriceBlockHtml(s, dis, priceAd, extraClass = '') {
+      const discount = Number(dis) || 0;
+      const sarOld = Number(s?.price) || 0;
+      const sarNew = Number(priceAd) || 0;
+      // Carriers priced in SAR carry no priceUsd, so fall back to the same
+      // constant rate lookupShipping() used in the other direction.
+      const usdOld = Number(s?.priceUsd) || (sarOld / USD_TO_SAR);
+      const usdNew = usdOld * (1 - discount / 100);
+      const hasDiscount = discount > 0;
+      return `
+        <div class="carrierPrice${extraClass ? ' ' + extraClass : ''}">
+          <span class="priceOld">${hasDiscount ? fmt(usdOld) + ' $' : ''}</span>
+          <b class="priceUsd">${fmt(usdNew)} $</b>
+          <span class="priceOld">${hasDiscount ? fmt(sarOld) + ' ' + RIYAL_SVG : ''}</span>
+          <span class="priceSar">${fmt(sarNew)} ${RIYAL_SVG}</span>
+        </div>
+      `;
+    }
+
     function renderCarriers(p) {
       // التحقق من جاهزية أسعار الشحن من قاعدة البيانات؛ إذا كان المنتج ممنوعاً نعرض سبب المنع حتى بدون أسعار
       const hasRestrictionMatch = matchedShippingRules(p).length > 0;
@@ -5982,7 +6145,7 @@
       // selection yet or the previous one is no longer valid/available --
       // otherwise this would silently revert the user's manual carrier pick
       // (see carrierItem's onclick below) on every render.
-      const hasValidSelection = carriersWithPrices.some(c => !c.blocked && c.id === p.carrierId);
+      const hasValidSelection = carriersWithPrices.some(c => c.id === p.carrierId);
 
       if (firstAvailableCarrier && !hasValidSelection) {
         p.carrierId = firstAvailableCarrier.id;
@@ -6035,19 +6198,22 @@
               const s = c.shipping;
               const availableIndex = carriersWithPrices.filter(item => !item.blocked).findIndex(item => item.id === c.id);
               const rankLabel = availableIndex === 0 ? 'الأرخص' : (availableIndex > 0 ? '#' + (availableIndex + 1) : 'غير متاح');
-              const isActive = !c.blocked && c.id === p.carrierId;
+              const isActive = c.id === p.carrierId;
               const isBest = !c.blocked && availableIndex === 0;
               const dis = c.discount || 0;
               const priceAd = c.discountedPrice;
               const feeAmount = c.assessment?.feeAmount || 0;
               if (c.blocked) {
+                // Restricted but fully selectable: show the real price + an
+                // informational warning, and keep it clickable like any card.
                 return `
-                  <button class="carrierItem blockedCarrier" type="button" disabled>
+                  <button class="carrierItem blockedCarrier ${isActive ? 'active' : ''}" onclick="updateProduct('${p.id}', 'carrierId', '${c.id}')">
                     <div class="carrierLabel">
-                      <b>${c.label}<span class="carrierRank">${rankLabel}</span></b>
-                      <small>ممنوع: ${escapeHtml(c.assessment?.reason || 'غير مسموح للشحن')}</small>
+                      <b>${c.label}<span class="carrierRank blockedRank">مقيّد</span></b>
+                      <small class="carrierWarn">⚠ ${escapeHtml(c.assessment?.reason || 'غير مسموح للشحن')}</small>
+                      <small>${s.deliveryDays || c.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                     </div>
-                    <div class="carrierPrice blocked"><b>ممنوع</b></div>
+                    ${carrierPriceBlockHtml(s, dis, priceAd)}
                   </button>
                 `;
               }
@@ -6059,19 +6225,13 @@
                   </div>
                   ${feeAmount > 0 ? `
                     <div class="carrierPrice feeBreakdown">
-                      ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ر.س</span>` : ''}
-                      <span>الشحن: ${fmt(priceAd)} ر.س</span>
-                      <span class="extraFeeLine">رسوم إضافية: ${fmt(feeAmount)} ر.س</span>
-                      <b>الإجمالي: ${fmt(priceAd + feeAmount)} ر.س</b>
-                      ${s.priceUsd ? `<small>${fmt(s.priceUsd)}$</small>` : ''}
+                      ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ${RIYAL_SVG}</span>` : ''}
+                      <span>الشحن: ${fmt(priceAd)} ${RIYAL_SVG}</span>
+                      <span class="extraFeeLine">رسوم إضافية: ${fmt(feeAmount)} ${RIYAL_SVG}</span>
+                      <b>الإجمالي: ${fmt(priceAd + feeAmount)} ${RIYAL_SVG}</b>
+                      <small>${fmt((Number(s.priceUsd) || (Number(s.price) || 0) / USD_TO_SAR) * (1 - dis / 100) + feeAmount / USD_TO_SAR)} $</small>
                     </div>
-                  ` : `
-                    <div class="carrierPrice">
-                      ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ر.س</span>` : ''}
-                      <b>${fmt(priceAd)} ر.س</b>
-                      ${s.priceUsd ? `<small>${fmt(s.priceUsd)}$</small>` : ''}
-                    </div>
-                  `}
+                  ` : carrierPriceBlockHtml(s, dis, priceAd)}
                 </button>
               `;
             }).join('')}
@@ -6169,8 +6329,8 @@
                   return `
                     <button class="carrierItem blockedCarrier" type="button" disabled>
                       <div class="carrierLabel">
-                        <b>${carrier.label}<span class="carrierRank">غير متاح</span></b>
-                        <small>ممنوع: ${escapeHtml(carrier.reason || 'غير مسموح للشحن')}</small>
+                        <b>${carrier.label}<span class="carrierRank blockedRank">غير متاح</span></b>
+                        <small class="carrierWarn">ممنوع: ${escapeHtml(carrier.reason || 'غير مسموح للشحن')}</small>
                       </div>
                       <div class="carrierPrice blocked"><b>ممنوع</b></div>
                     </button>
@@ -6184,19 +6344,13 @@
                     </div>
                     ${feeAmount > 0 ? `
                       <div class="carrierPrice feeBreakdown">
-                        ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ر.س</span>` : ''}
-                        <span>الشحن: ${fmt(priceAd)} ر.س</span>
-                        <span class="extraFeeLine">رسوم إضافية: ${fmt(feeAmount)} ر.س</span>
-                        <b>الإجمالي: ${fmt(priceAd + feeAmount)} ر.س</b>
-                        ${s.priceUsd ? `<small>${fmt(s.priceUsd)}$</small>` : ''}
+                        ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ${RIYAL_SVG}</span>` : ''}
+                        <span>الشحن: ${fmt(priceAd)} ${RIYAL_SVG}</span>
+                        <span class="extraFeeLine">رسوم إضافية: ${fmt(feeAmount)} ${RIYAL_SVG}</span>
+                        <b>الإجمالي: ${fmt(priceAd + feeAmount)} ${RIYAL_SVG}</b>
+                        <small>${fmt((Number(s.priceUsd) || (Number(s.price) || 0) / USD_TO_SAR) * (1 - dis / 100) + feeAmount / USD_TO_SAR)} $</small>
                       </div>
-                    ` : `
-                      <div class="carrierPrice">
-                        ${dis > 0 ? `<span class="discountOld">${fmt(s.price)} ر.س</span>` : ''}
-                        <b>${fmt(priceAd)} ر.س</b>
-                        ${s.priceUsd ? `<small>${fmt(s.priceUsd)}$</small>` : ''}
-                      </div>
-                    `}
+                    ` : carrierPriceBlockHtml(s, dis, priceAd)}
                   </button>
                 `;
               }).join('')}
@@ -6811,6 +6965,52 @@
       toast('تم تحديث الحالة');
     }
 
+    // Single source of truth for the per-product list of an order, so the
+    // Kanban dropdown's index always addresses the same product that
+    // updateProductStatus() writes back. Legacy orders (single productLink,
+    // no products[]) are normalised into the same shape.
+    function orderProductList(order) {
+      if (!order) return [];
+      if (Array.isArray(order.products) && order.products.length) return order.products;
+      if (order.productLink || order.productName) {
+        return [{
+          link: order.productLink || '',
+          name: order.productName || '',
+          sellerOrderNumber: order.sellerOrderNumber || '',
+          trackingNumber: order.trackingNumber || '',
+          status: order.status || 'purchased',
+          statusUpdatedAt: order.statusUpdatedAt || todayInput(),
+        }];
+      }
+      return [];
+    }
+
+    // Product status is deliberately independent of the main order status:
+    // the Kanban column is driven by order.status, which is NOT touched here,
+    // so changing a product's status never moves the card between columns and
+    // never affects the other products.
+    async function updateProductStatus(orderId, productIndex, newStatus) {
+      const order = (state.orders || []).find(o => o.id === orderId);
+      if (!order) return;
+      const products = orderProductList(order);
+      const index = Number(productIndex);
+      if (!products[index]) return;
+      const nextProducts = products.map((prod, i) => i === index
+        ? { ...prod, status: newStatus, statusUpdatedAt: todayInput() }
+        : prod);
+      const updated = { ...order, products: nextProducts };
+      try {
+        await updateOrder(updated);
+      } catch (err) {
+        console.error(err);
+        toast('فشل تحديث حالة المنتج في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
+      renderOrders();
+      toast('تم تحديث حالة المنتج');
+    }
+
     async function updateShipmentStatus(orderId, shipmentId, newStatus) {
       const order = (state.orders || []).find(o => o.id === orderId);
       if (!order) return;
@@ -7009,13 +7209,33 @@ Thank you.`;
       const shippingCustomerHtml = Number(order.indirectShippingCustomer || 0) > 0
         ? `<span><b>سعر الشحن</b>${fmtMoney(order.indirectShippingCustomer)} ر.س</span>`
         : '';
-      const orderProductUrls = uniqueList(
-        (Array.isArray(order.products) && order.products.length ? order.products : (order.productLink ? [{ link: order.productLink }] : []))
-          .map(prod => prod.link)
-      );
-      const productUrlsHtml = orderProductUrls.length ? `
+      // Each product keeps its OWN status, independent of order.status (which
+      // is what drives the Kanban column). Products are listed un-deduped and
+      // addressed by index so every row maps to exactly one product -- see
+      // orderProductList()/updateProductStatus().
+      const orderProductItems = orderProductList(order);
+      const productUrlsHtml = orderProductItems.length ? `
         <div class="orderCardProductLinks">
-          ${orderProductUrls.map(link => `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" class="orderCardProductLink" title="${escapeHtml(link)}">${escapeHtml(compactUrlLabel(link))}</a>`).join('')}
+          ${orderProductItems.map((prod, i) => {
+            // Show the real product name as the clickable text (falling back to
+            // the host name, then a generic label, when the name is missing).
+            // The full name stays available as the tooltip since the visible
+            // text is truncated with an ellipsis by CSS.
+            const prodName = String(prod.name || '').trim();
+            const label = prodName || compactUrlLabel(prod.link) || 'منتج';
+            const tooltip = prodName || prod.link || '';
+            const linkHtml = prod.link
+              ? `<a href="${escapeHtml(prod.link)}" target="_blank" rel="noopener" dir="auto" title="${escapeHtml(tooltip)}">${escapeHtml(label)}</a>`
+              : `<span class="shipNoLink" dir="auto" title="${escapeHtml(tooltip)}">${escapeHtml(label)}</span>`;
+            return `
+              <div class="shipmentPill">
+                ${linkHtml}
+                <select class="shipStatusDropdown" onchange="updateProductStatus('${order.id}', ${i}, this.value)">
+                  ${ORDER_STATUSES.map(st => `<option value="${st.id}" ${(prod.status || 'purchased') === st.id ? 'selected' : ''}>${st.label}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          }).join('')}
         </div>
       ` : '';
       const orderShipments = Array.isArray(order.shipments) ? order.shipments : [];
@@ -7419,6 +7639,7 @@ Thank you.`;
     window.deleteOrderAction = deleteOrderAction;
     window.changeOrderStatus = changeOrderStatus;
     window.updateShipmentStatus = updateShipmentStatus;
+    window.updateProductStatus = updateProductStatus;
     window.refreshOrderUpdate = refreshOrderUpdate;
     window.copySellerEmail = copySellerEmail;
     window.openOrderWhatsapp = openOrderWhatsapp;

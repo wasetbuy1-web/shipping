@@ -4804,14 +4804,73 @@
     // "fedex" has always meant FedEx Priority on this site -- its own Excel
     // header aliases (see the pre-Supabase importer) accepted "fedex priority"
     // as a synonym and never "fedex economy" -- preserved here as-is.
+    // Each carrier now carries a `country` field identifying which shipping
+    // origin (warehouse country) it belongs to. The existing US carriers keep
+    // their exact ids/labels/order so US behaviour is byte-identical to before
+    // (backward compatibility). New-country carriers reuse the same immutable
+    // carrierCodes against their own country warehouseCode; if the repository
+    // has no rates for a warehouseCode yet, ShippingProvider.isReady() reports
+    // false and that carrier simply never appears -- nothing breaks.
     const CARRIERS = [
-      { id: 'budget', label: 'MyUS Budget', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'BUDGET' },
-      { id: 'aramex', label: 'MyUS Aramex', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'ARAMEX' },
-      { id: 'fedex', label: 'MyUS FedEx', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_PRIORITY' },
-      { id: 'fedex_economy', label: 'MyUS FedEx Economy', time: '', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_ECONOMY' },
-      { id: 'dhl', label: 'MyUS DHL', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'DHL' },
-      { id: 'shopship', label: 'Shop & Ship', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER' },
+      // United States (unchanged)
+      { id: 'budget', label: 'MyUS Budget', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'BUDGET', country: 'US' },
+      { id: 'aramex', label: 'MyUS Aramex', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'ARAMEX', country: 'US' },
+      { id: 'fedex', label: 'MyUS FedEx', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_PRIORITY', country: 'US' },
+      { id: 'fedex_economy', label: 'MyUS FedEx Economy', time: '', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_ECONOMY', country: 'US' },
+      { id: 'dhl', label: 'MyUS DHL', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'DHL', country: 'US' },
+      { id: 'shopship', label: 'Shop & Ship', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'US' },
+
+      // United Kingdom
+      { id: 'budget_uk', label: 'MyUS Budget (UK)', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'BUDGET', country: 'UK' },
+      { id: 'aramex_uk', label: 'MyUS Aramex (UK)', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'ARAMEX', country: 'UK' },
+      { id: 'fedex_uk', label: 'MyUS FedEx (UK)', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_PRIORITY', country: 'UK' },
+      { id: 'fedex_economy_uk', label: 'MyUS FedEx Economy (UK)', time: '', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_ECONOMY', country: 'UK' },
+      { id: 'dhl_uk', label: 'MyUS DHL (UK)', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'DHL', country: 'UK' },
+      { id: 'shopship_uk', label: 'Shop & Ship (UK)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'UK' },
+
+      // Singapore
+      { id: 'shopship_sg', label: 'Shop & Ship (Singapore)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_SG', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'SG' },
+
+      // Germany
+      { id: 'shopship_de', label: 'Shop & Ship (Germany)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_DE', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'DE' },
     ];
+
+    // The selectable shipping origin countries. `code` matches CARRIERS.country.
+    const SHIPPING_COUNTRIES = [
+      { code: 'US', label: 'الولايات المتحدة', hint: 'United States', flag: '🇺🇸' },
+      { code: 'UK', label: 'المملكة المتحدة', hint: 'United Kingdom', flag: '🇬🇧' },
+      { code: 'SG', label: 'سنغافورة', hint: 'Singapore', flag: '🇸🇬' },
+      { code: 'DE', label: 'ألمانيا', hint: 'Germany', flag: '🇩🇪' },
+    ];
+    const SHIPPING_COUNTRY_CODES = SHIPPING_COUNTRIES.map(c => c.code);
+
+    // Currently selected shipping origin. Defaults to 'US' so existing quotes
+    // (which never stored a country) keep behaving exactly as before.
+    function getSelectedCountry() {
+      const c = state?.shippingCountry;
+      return SHIPPING_COUNTRY_CODES.includes(c) ? c : 'US';
+    }
+
+    // The single chokepoint used everywhere the calculator enumerates carriers:
+    // only carriers whose warehouse belongs to the selected country are ever
+    // considered, so the customer can never see another country's warehouses.
+    function carriersForCountry(country = getSelectedCountry()) {
+      return CARRIERS.filter(c => (c.country || 'US') === country);
+    }
+
+    // Carriers eligible for the FedEx/DHL discount (and, for MyUS, the only
+    // ones allowed to carry extra-fee items). Keyed on the immutable carrierCode
+    // instead of the country-specific id, so the SAME rule applies to every
+    // country's equivalent carrier. For the US carriers this is byte-equivalent
+    // to the previous id list ['fedex','dhl','fedex_economy'] -- US math is
+    // unchanged.
+    const DISCOUNT_CARRIER_CODES = ['FEDEX_PRIORITY', 'FEDEX_ECONOMY', 'DHL'];
+    function isDiscountCarrier(carrierOrId) {
+      const carrier = typeof carrierOrId === 'string'
+        ? CARRIERS.find(c => c.id === carrierOrId)
+        : carrierOrId;
+      return !!carrier && DISCOUNT_CARRIER_CODES.includes(carrier.carrierCode);
+    }
 
     const CURRENCIES = [
       { code: 'USD', symbol: '$', name: 'دولار أمريكي', defaultRate: 3.75 },
@@ -4894,9 +4953,11 @@
       try { loaded = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch (e) { }
       const base = loaded && Array.isArray(loaded.products) && loaded.products.length
         ? loaded
-        : { products: [productTemplate()], commissionConfig: { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION }, restrictionFeeConfig: defaultRestrictionFeeConfig(), savedWeights: [], orders: [], recentQuotes: [], currentQuoteId: uid(), carrierDiscount: DEFAULT_CARRIER_DISCOUNT, discountDefaultApplied: true, orderShippingMode: 'independent', orderType: '' };
+        : { products: [productTemplate()], commissionConfig: { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION }, restrictionFeeConfig: defaultRestrictionFeeConfig(), savedWeights: [], orders: [], recentQuotes: [], currentQuoteId: uid(), carrierDiscount: DEFAULT_CARRIER_DISCOUNT, discountDefaultApplied: true, orderShippingMode: 'independent', orderType: '', shippingCountry: 'US' };
       base.orderType = ['singleSite', 'multiSite'].includes(base.orderType) ? base.orderType : '';
       base.orderShippingMode = base.orderShippingMode === 'myusCombined' ? 'myusCombined' : 'independent';
+      // Default to 'US' when missing/invalid so older stored quotes are unchanged.
+      base.shippingCountry = ['US', 'UK', 'SG', 'DE'].includes(base.shippingCountry) ? base.shippingCountry : 'US';
       base.commissionConfig = base.commissionConfig || { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION };
       base.restrictionFeeConfig = { ...defaultRestrictionFeeConfig(), ...(base.restrictionFeeConfig || {}) };
       if (!base.discountDefaultApplied) {
@@ -4965,11 +5026,13 @@
     // the Shipping Service has successfully cached data from Supabase for
     // that provider, instead of whether a file was uploaded in-browser.
     function isMyusUploaded() {
-      return CARRIERS.filter(c => c.source === 'myus').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
+      // Only consider MyUS warehouses for the currently selected country.
+      return carriersForCountry().filter(c => c.source === 'myus').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
     }
 
     function isShopshipUploaded() {
-      return CARRIERS.filter(c => c.source === 'shopship').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
+      // Only consider Shop & Ship warehouses for the currently selected country.
+      return carriersForCountry().filter(c => c.source === 'shopship').some(c => ShippingProvider.isReady(c.warehouseCode, c.carrierCode));
     }
 
     function areAllFilesUploaded() {
@@ -5094,7 +5157,7 @@
       const feeCodes = uniqueList(rules.flatMap(rule => rule.extraFees?.[carrier.source] || []));
       const feeAmount = feeCodes.reduce((sum, code) => sum + feeAmountByCode(code, p, index), 0);
 
-      if (carrier.source === 'myus' && feeAmount > 0 && !['dhl', 'fedex', 'fedex_economy'].includes(carrier.id)) {
+      if (carrier.source === 'myus' && feeAmount > 0 && !isDiscountCarrier(carrier)) {
         return { status: 'hidden', reason: 'منتجات الرسوم الإضافية في MyUS تشحن عبر DHL و FedEx فقط', rules, feeAmount, feeCodes };
       }
 
@@ -5102,7 +5165,8 @@
     }
 
     function carrierOptionsForProduct(p, index = 0, includeBlocked = false) {
-      return CARRIERS.map((carrier, originalIndex) => {
+      // Enumerate only carriers belonging to the selected shipping country.
+      return carriersForCountry().map((carrier, originalIndex) => {
         const assessment = shippingAssessmentForCarrier(p, carrier, index);
         if (assessment.status === 'hidden') return null;
         const blocked = assessment.status === 'blocked';
@@ -5115,7 +5179,7 @@
         if (carrier.source === 'shopship' && !isShopshipUploaded()) return null;
         const shipping = lookupShipping(p.weight, p.weightUnit, carrier.id);
         if (!shipping.price) return null;
-        const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
+        const discount = isDiscountCarrier(carrier) ? state.carrierDiscount : 0;
         const discountedPrice = shipping.price * (1 - discount / 100);
         const finalPrice = discountedPrice + (assessment.feeAmount || 0);
         return { ...carrier, originalIndex, assessment, blocked, shipping, discount, discountedPrice, finalPrice };
@@ -5165,12 +5229,12 @@
       if (weightLb <= 0) return { price: 0, lb: 0, capped: false, priceUsd: 0, carrier: null, discount: 0, extraFeeAmount: 0, shippingOnly: 0 };
       const restriction = getCombinedMyusRestrictionSummary();
       if (restriction.blocked) return { price: 0, lb: 0, capped: false, priceUsd: 0, carrier: null, discount: 0, blocked: true, reason: restriction.reason, extraFeeAmount: 0, shippingOnly: 0 };
-      const cheapest = CARRIERS
+      const cheapest = carriersForCountry()
         .filter(carrier => carrier.source === 'myus')
-        .filter(carrier => !restriction.hasExtraFee || ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id))
+        .filter(carrier => !restriction.hasExtraFee || isDiscountCarrier(carrier))
         .map((carrier, originalIndex) => {
           const shipping = lookupShipping(weightLb, 'lb', carrier.id);
-          const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
+          const discount = isDiscountCarrier(carrier) ? state.carrierDiscount : 0;
           const discountedPrice = shipping.price * (1 - discount / 100);
           const finalPrice = discountedPrice + (restriction.feeAmount || 0);
           return { carrier, originalIndex, shipping, discount, discountedPrice, finalPrice };
@@ -5202,7 +5266,7 @@
       const priceRsar = productPriceSar(p, index);
       let shippingRsar = 0;
       let shippingInfo = null;
-      const supportsDis = ['fedex', 'dhl', 'fedex_economy'].includes(p.carrierId);
+      const supportsDis = isDiscountCarrier(p.carrierId);
       const discount = supportsDis ? state.carrierDiscount : 0;
 
       if (p.shippingType === 'direct') {
@@ -5238,7 +5302,7 @@
       const manualAdditionalFeeAmount = (p.shippingType !== 'direct') ? manualAdditionalFeeSar(p) : 0;
       const additionalFeeAmount = manualAdditionalFeeAmount + automaticExtraFeeAmount;
 
-      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: ['fedex', 'dhl', 'fedex_economy'].includes(p.carrierId) ? state.carrierDiscount : 0 };
+      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: isDiscountCarrier(p.carrierId) ? state.carrierDiscount : 0 };
     }
 
     function currentCalcs() {
@@ -5501,8 +5565,18 @@
       if (input) input.value = '';
     }
 
-    function weightPrompt(p) {
-      return `أحتاج تقدير وزن المنتج التالي بالرطل (lb):\n\nاسم المنتج: ${p.name || '—'}\nالرابط: ${p.link || '—'}\n\nالمطلوب: أعطني الوزن الفعلي عند الشحن مع التغليف العادي، والأبعاد بالبوصة (in)، والمصادر، ونسبة التأكد فقط.\n\nرتّب الإجابة بهذا الشكل فقط:\nالوزن:\nالأبعاد بالبوصة (in):\nالمصادر:\nنسبة التأكد:`;
+    // TASK 1: build ONE prompt that contains ALL products in the order.
+    // Accepts an array of products and iterates over them in order, numbering
+    // each one (المنتج #1، #2 ...) with its name and URL.
+    function weightPrompt(products) {
+      const list = Array.isArray(products) ? products : [products];
+      // Shared instructions (asked once) describing what is required per product.
+      const header = `أحتاج تقدير وزن المنتجات التالية بالرطل (lb).\n\nلكل منتج أعطني:\nالوزن الفعلي عند الشحن مع التغليف العادي\nالأبعاد بالبوصة (in)\nالمصادر\nنسبة التأكد`;
+      // One block per product, in the same order they appear in the order.
+      const blocks = list.map((p, i) => (
+        `----------------------------------------\n\nالمنتج #${i + 1}\n\nاسم المنتج:\n${p.name || '—'}\n\nالرابط:\n${p.link || '—'}`
+      )).join('\n\n');
+      return `${header}\n\n${blocks}`;
     }
 
     function typePrompt(p) {
@@ -5516,8 +5590,10 @@
       render();
       setTimeout(() => {
         aiLoadingProductId = null;
-        const prompt = weightPrompt(p);
-        copyText(prompt, 'تم نسخ طلب تقدير الوزن. الصقه في ChatGPT ثم أدخل الوزن هنا');
+        // TASK 1: generate a single prompt for ALL products in the current order
+        // (instead of only the clicked product).
+        const prompt = weightPrompt(state.products);
+        copyText(prompt, 'تم نسخ طلب تقدير وزن جميع المنتجات. الصقه في ChatGPT ثم أدخل الوزن هنا');
         render();
       }, 950);
     }
@@ -5554,6 +5630,7 @@
       state.products = [productTemplate()];
       state.orderType = '';
       state.orderShippingMode = 'independent';
+      state.shippingCountry = 'US'; // reset shipping origin for the new order
       state.currentQuoteId = uid();
       const search = document.getElementById('savedWeightSearch');
       if (search) search.value = '';
@@ -5662,6 +5739,23 @@
       state.discountDefaultApplied = true;
       saveState();
       render();
+    }
+
+    // Select the shipping origin country. Order-level (part of the quote
+    // state). Switching country invalidates any carrier a product had picked
+    // from the previous country, so we reset those selections to the new
+    // country's default carrier; renderCarriers() re-picks the cheapest on the
+    // next render for products that already have a weight.
+    function setShippingCountry(code) {
+      if (!SHIPPING_COUNTRY_CODES.includes(code)) return;
+      if (state.shippingCountry === code) return;
+      state.shippingCountry = code;
+      const defaultCarrierId = (carriersForCountry(code)[0] || {}).id || '';
+      (state.products || []).forEach(p => { p.carrierId = defaultCarrierId; });
+      saveState();
+      render();
+      // Load this country's rates on demand (safe no-op if not yet booted).
+      loadRatesForSelectedCountry();
     }
 
     function escapeHtml(str) {
@@ -5974,6 +6068,7 @@
                   ${p.directShippingCost ? `<div class="weightConvert">≈ ${fmt((parseFloat(p.directShippingCost) || 0) * (parseFloat(p.directShippingRate) || 0))} ر.س شحن</div>` : ''}
                 </div>
               ` : `
+                ${renderShippingCountry()}
                 <div class="field weightSection">
                   <div class="weightSourceRow">
                     <div>
@@ -6077,6 +6172,27 @@
           <b class="priceUsd">${fmt(usdNew)} $</b>
           <span class="priceOld">${hasDiscount ? fmt(sarOld) + ' ' + RIYAL_SVG : ''}</span>
           <span class="priceSar">${fmt(sarNew)} ${RIYAL_SVG}</span>
+        </div>
+      `;
+    }
+
+    // Shipping origin (warehouse country) selector. Order-level, rendered once
+    // per indirect product card just BEFORE the weight section so the flow is
+    // Shipping Type -> Shipping Country -> Weight -> Shipping Companies. Reuses
+    // the existing .shipChoices / .shipBtn styling -- no new CSS.
+    function renderShippingCountry() {
+      const selected = getSelectedCountry();
+      return `
+        <div class="field">
+          <label class="label">دولة الشحن (المستودع)</label>
+          <div class="shipChoices">
+            ${SHIPPING_COUNTRIES.map(c => `
+              <button class="shipBtn ${selected === c.code ? 'active' : ''}" type="button" onclick="setShippingCountry('${c.code}')">
+                <span class="shipIcon">${c.flag}</span>
+                <span class="shipText"><b>${c.label}</b><small>${c.hint}</small></span>
+              </button>
+            `).join('')}
+          </div>
         </div>
       `;
     }
@@ -6249,15 +6365,15 @@
       }
       const c = currentCalcs();
       const combinedRestriction = getCombinedMyusRestrictionSummary();
-      const carriersWithPrices = CARRIERS
+      const carriersWithPrices = carriersForCountry()
         .filter(carrier => carrier.source === 'myus')
-        .filter(carrier => !combinedRestriction.hasExtraFee || ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id))
+        .filter(carrier => !combinedRestriction.hasExtraFee || isDiscountCarrier(carrier))
         .map((carrier, originalIndex) => {
           if (combinedRestriction.blocked) {
             return { ...carrier, originalIndex, blocked: true, reason: combinedRestriction.reason, shipping: { price: 0, lb: 0, capped: false, priceUsd: 0 }, discount: 0, discountedPrice: 0, finalPrice: 0 };
           }
           const shipping = lookupShipping(c.combinedWeightLb, 'lb', carrier.id);
-          const discount = ['fedex', 'dhl', 'fedex_economy'].includes(carrier.id) ? state.carrierDiscount : 0;
+          const discount = isDiscountCarrier(carrier) ? state.carrierDiscount : 0;
           const discountedPrice = shipping.price * (1 - discount / 100);
           const finalPrice = discountedPrice + (combinedRestriction.feeAmount || 0);
           return { ...carrier, originalIndex, shipping, discount, discountedPrice, finalPrice, extraFeeAmount: combinedRestriction.feeAmount || 0 };
@@ -6934,15 +7050,30 @@
       const products = Array.isArray(order.products) && order.products.length
         ? order.products
         : (order.productLink ? [{ name: order.customerShortTitle || 'المنتج', link: order.productLink }] : []);
-      const productLines = products.map(p => p.link || p.name || '').filter(Boolean).join('\n');
+
+      // TASK 2: derive the phone number from the stored WhatsApp link
+      // (e.g. https://wa.me/966...) by keeping only the digits.
+      const phoneDigits = (order.whatsappLink || '').replace(/\D/g, '');
+
+      // TASK 2: include EVERY product with its name AND url, numbered in order.
+      const productBlock = products.length
+        ? products.map((p, i) => `${i + 1}.\nالاسم:\n${p.name || '—'}\n\nالرابط:\n${p.link || '—'}`).join('\n\n')
+        : '—';
+
       const shippingPrice = Number(order.indirectShippingCustomer || 0) > 0
         ? `${fmtMoney(order.indirectShippingCustomer)} ريال`
         : 'غير محدد';
       const lines = [
         `اسم العميل: ${order.customerName || '—'}`,
+        `الجوال: ${phoneDigits || '—'}`,                       // TASK 2: phone number
         `العنوان الوطني: ${order.customerShortTitle || '—'}`,
-        `روابط المنتجات:\n${productLines || '—'}`,
+        `----------------------------------------`,
+        `المنتجات:\n\n${productBlock}`,                        // TASK 2: all products (name + url)
+        `----------------------------------------`,
         `سعر الشحن الدولي: ${shippingPrice}`,
+        `----------------------------------------`,
+        // TASK 2: WhatsApp link appended at the end.
+        `واتساب:\n${phoneDigits ? `https://wa.me/${phoneDigits}` : (order.whatsappLink || '—')}`,
       ];
       await navigator.clipboard.writeText(lines.join('\n'));
       toast('تم نسخ الطلب');
@@ -7605,7 +7736,8 @@ Thank you.`;
         carrierDiscount: DEFAULT_CARRIER_DISCOUNT,
         discountDefaultApplied: true,
         orderShippingMode: 'independent',
-        orderType: ''
+        orderType: '',
+        shippingCountry: 'US'
       };
       modal.classList.remove('show');
       await loadOrders();
@@ -7620,6 +7752,7 @@ Thank you.`;
     window.deleteProduct = deleteProduct;
     window.updateProduct = updateProduct;
     window.setCarrierDiscount = setCarrierDiscount;
+    window.setShippingCountry = setShippingCountry;
     window.estimateWeight = estimateWeight;
     window.copyTypePrompt = copyTypePrompt;
     window.saveWeightFromProduct = saveWeightFromProduct;
@@ -7806,24 +7939,41 @@ async function deleteSavedWeightRow(id) {
   }
 }
 
-  // Every (warehouse, carrier) pair CARRIERS currently uses -- computed from
-  // the single CARRIERS array, so a future carrier added there is preloaded
-  // automatically with no other change required.
-  const SHIPPING_PAIRS_TO_PRELOAD = CARRIERS.map(c => [c.warehouseCode, c.carrierCode]);
+  // The (warehouse, carrier) pairs to load from Supabase -- ONLY those for the
+  // currently selected shipping country. Loading is scoped to one country so a
+  // country whose warehouse metadata isn't in Supabase yet can never make the
+  // boot's Promise.all reject and take another country's prices down with it
+  // (ShippingProvider._loadOneLive throws on an unknown code). The rate cache
+  // inside ShippingProvider accumulates across boots, so switching countries
+  // keeps each one cached for the session. Default country 'US' => this returns
+  // exactly the original US pairs, so startup behaviour is unchanged.
+  function shippingPairsToPreload() {
+    return carriersForCountry().map(c => [c.warehouseCode, c.carrierCode]);
+  }
 
   async function retryLoadShippingRates() {
-    await ShippingProvider.retry(SHIPPING_PAIRS_TO_PRELOAD);
+    await ShippingProvider.retry(shippingPairsToPreload());
     render(); // render() already calls renderTopBanner() internally
     renderRateFileStatus();
   }
   window.retryLoadShippingRates = retryLoadShippingRates;
+
+  // Load the selected country's rates on demand (called when the shipping
+  // country changes). Guarded so it's a no-op until ShippingProvider exists.
+  async function loadRatesForSelectedCountry() {
+    if (typeof ShippingProvider === 'undefined' || !ShippingProvider) return;
+    await ShippingProvider.boot(shippingPairsToPreload());
+    render();
+    if (typeof renderRateFileStatus === 'function') renderRateFileStatus();
+  }
+  window.loadRatesForSelectedCountry = loadRatesForSelectedCountry;
 
   async function initApp() {
 
   await Promise.all([
     loadOrders(),
     loadSavedWeights(),
-    ShippingProvider.boot(SHIPPING_PAIRS_TO_PRELOAD),
+    ShippingProvider.boot(shippingPairsToPreload()),
   ]);
 
   render();

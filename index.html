@@ -598,12 +598,26 @@
 
     .carrierLabel { min-width: 0; flex: 1; }
 
+    /* Carrier name row: rank badge + (English) carrier name are laid out
+       left-to-right and isolated from the RTL page so the name always starts
+       from the left and never reorders next to the badge -- e.g. "[#2] MyUS
+       Budget" -- regardless of whether the badge text is English (#2) or
+       Arabic (الأرخص). Only THIS row is LTR; the page and the metadata line
+       below stay RTL. */
     .carrierLabel b {
       display: block;
       font-size: 13px;
       font-weight: 900;
       color: var(--textBright);
       margin-bottom: 3px;
+      direction: ltr;
+      text-align: left;
+    }
+
+    /* Keep the English carrier name as an isolated LTR run so digits and
+       Latin words inside it can never be reversed by the surrounding text. */
+    .carrierName {
+      unicode-bidi: isolate;
     }
 
     .carrierLabel small {
@@ -611,6 +625,15 @@
       font-size: 10.5px;
       color: var(--muted2);
       line-height: 1.35;
+      /* Isolate each metadata line so the mixed number/Arabic content aligns
+         consistently from card to card (stays RTL, just self-contained). */
+      unicode-bidi: isolate;
+    }
+
+    /* Delivery-time token ("8 - 14 يوم", "3-5 days", ...): isolated so its
+       numbers/range never reverse and it aligns the same on every card. */
+    .carrierEta {
+      unicode-bidi: isolate;
     }
 
     /* Two aligned columns -- [struck old price][new price] -- over two rows:
@@ -2574,9 +2597,15 @@
       margin-top: 0;
     }
 
+    /* Two equal columns filled left-to-right, top-to-bottom, so the already
+       price-sorted list reads:  1 2 / 3 4 / 5 6 ...  -- cheapest top-left,
+       second to its right, third directly below the first, and so on. The grid
+       CONTAINER is LTR only to control this placement order; each card keeps
+       its own RTL direction below so the Arabic content is unaffected. Same
+       layout for every country -- no special cases. */
     .carrierList {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      direction: rtl;
+      direction: ltr;
     }
 
     .carrierItem {
@@ -2584,13 +2613,15 @@
       position: relative;
     }
 
-    /* Cheapest carrier keeps ONLY its "الأرخص" badge + full-width layout.
-       The green "selected" background is reserved for .active alone, so the
-       cheapest and the user's pick never both look active at once. */
-    .carrierItem.bestCarrier {
-      grid-column: 1 / -1;
-      min-height: 58px;
-    }
+    /* Cheapest carrier keeps ONLY its "الأرخص" badge (styled via
+       .carrierItem.bestCarrier .carrierRank below). It is intentionally NOT
+       given any size override anymore: it stays a normal equal-width grid cell
+       like every other card, so the layout is uniform for every country.
+       Previously it spanned both columns (grid-column: 1 / -1) with a different
+       min-height, which broke countries whose only carriers are the two
+       Shop & Ship plans -- the cheapest went full-width and the second card
+       dropped to its own narrower row. With no size override, every country
+       renders equal-width, equal-height cards two per row. */
 
     .carrierRank {
       display: inline-flex;
@@ -2599,7 +2630,9 @@
       min-width: 48px;
       height: 20px;
       padding: 0 7px;
-      margin-inline-start: 7px;
+      /* Badge sits on the LEFT (row is LTR now); gap goes after it, before the
+         name. Kept at 7px so spacing is unchanged from before. */
+      margin-inline-end: 7px;
       border-radius: 999px;
       background: var(--primarySoft);
       color: var(--primary2);
@@ -2607,6 +2640,9 @@
       font-size: 10px;
       font-weight: 900;
       vertical-align: middle;
+      /* "#2" / "الأرخص" render as an atomic unit, never reordered. */
+      direction: ltr;
+      unicode-bidi: isolate;
     }
 
     .carrierItem.bestCarrier .carrierRank {
@@ -4811,28 +4847,40 @@
     // carrierCodes against their own country warehouseCode; if the repository
     // has no rates for a warehouseCode yet, ShippingProvider.isReady() reports
     // false and that carrier simply never appears -- nothing breaks.
+    // NOTE ON LABELS vs CODES: `label` is DISPLAY-ONLY and can be changed
+    // freely. `id`, `carrierCode` and `warehouseCode` are the immutable
+    // identifiers used by pricing/Supabase and must never change. Each
+    // Shop & Ship warehouse now exposes two independent plans -- Member
+    // (SHOPANDSHIP_MEMBER) and Non-Member (SHOPANDSHIP_NONMEMBER); each is a
+    // separate carrier so both appear as their own option. If the repository
+    // only has one of them, ShippingProvider.isReady() hides the other
+    // automatically (carrierOptionsForProduct filters out priceless carriers).
     const CARRIERS = [
       // United States (unchanged)
       { id: 'budget', label: 'MyUS Budget', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'BUDGET', country: 'US' },
       { id: 'aramex', label: 'MyUS Aramex', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'ARAMEX', country: 'US' },
-      { id: 'fedex', label: 'MyUS FedEx', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_PRIORITY', country: 'US' },
+      { id: 'fedex', label: 'MyUS FedEx Priority', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_PRIORITY', country: 'US' },
       { id: 'fedex_economy', label: 'MyUS FedEx Economy', time: '', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'FEDEX_ECONOMY', country: 'US' },
       { id: 'dhl', label: 'MyUS DHL', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_US', carrierCode: 'DHL', country: 'US' },
-      { id: 'shopship', label: 'Shop & Ship', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'US' },
+      { id: 'shopship', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'US' },
+      { id: 'shopship_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'US' },
 
       // United Kingdom
       { id: 'budget_uk', label: 'MyUS Budget (UK)', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'BUDGET', country: 'UK' },
       { id: 'aramex_uk', label: 'MyUS Aramex (UK)', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'ARAMEX', country: 'UK' },
-      { id: 'fedex_uk', label: 'MyUS FedEx (UK)', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_PRIORITY', country: 'UK' },
+      { id: 'fedex_uk', label: 'MyUS FedEx Priority (UK)', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_PRIORITY', country: 'UK' },
       { id: 'fedex_economy_uk', label: 'MyUS FedEx Economy (UK)', time: '', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_ECONOMY', country: 'UK' },
       { id: 'dhl_uk', label: 'MyUS DHL (UK)', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'DHL', country: 'UK' },
-      { id: 'shopship_uk', label: 'Shop & Ship (UK)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'UK' },
+      { id: 'shopship_uk', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'UK' },
+      { id: 'shopship_uk_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'UK' },
 
       // Singapore
-      { id: 'shopship_sg', label: 'Shop & Ship (Singapore)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_SG', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'SG' },
+      { id: 'shopship_sg', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_SG', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'SG' },
+      { id: 'shopship_sg_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_SG', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'SG' },
 
       // Germany
-      { id: 'shopship_de', label: 'Shop & Ship (Germany)', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_DE', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'DE' },
+      { id: 'shopship_de', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_DE', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'DE' },
+      { id: 'shopship_de_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_DE', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'DE' },
     ];
 
     // The selectable shipping origin countries. `code` matches CARRIERS.country.
@@ -6325,9 +6373,9 @@
                 return `
                   <button class="carrierItem blockedCarrier ${isActive ? 'active' : ''}" onclick="updateProduct('${p.id}', 'carrierId', '${c.id}')">
                     <div class="carrierLabel">
-                      <b>${c.label}<span class="carrierRank blockedRank">مقيّد</span></b>
+                      <b><span class="carrierRank blockedRank">مقيّد</span><span class="carrierName">${c.label}</span></b>
                       <small class="carrierWarn">⚠ ${escapeHtml(c.assessment?.reason || 'غير مسموح للشحن')}</small>
-                      <small>${s.deliveryDays || c.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
+                      <small><span class="carrierEta">${s.deliveryDays || c.time}</span> · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                     </div>
                     ${carrierPriceBlockHtml(s, dis, priceAd)}
                   </button>
@@ -6336,8 +6384,8 @@
               return `
                 <button class="carrierItem ${isActive ? 'active' : ''} ${isBest ? 'bestCarrier' : ''}" onclick="updateProduct('${p.id}', 'carrierId', '${c.id}')">
                   <div class="carrierLabel">
-                    <b>${c.label}<span class="carrierRank">${rankLabel}</span></b>
-                    <small>${s.deliveryDays || c.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
+                    <b><span class="carrierRank">${rankLabel}</span><span class="carrierName">${c.label}</span></b>
+                    <small><span class="carrierEta">${s.deliveryDays || c.time}</span> · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                   </div>
                   ${feeAmount > 0 ? `
                     <div class="carrierPrice feeBreakdown">
@@ -6445,7 +6493,7 @@
                   return `
                     <button class="carrierItem blockedCarrier" type="button" disabled>
                       <div class="carrierLabel">
-                        <b>${carrier.label}<span class="carrierRank blockedRank">غير متاح</span></b>
+                        <b><span class="carrierRank blockedRank">غير متاح</span><span class="carrierName">${carrier.label}</span></b>
                         <small class="carrierWarn">ممنوع: ${escapeHtml(carrier.reason || 'غير مسموح للشحن')}</small>
                       </div>
                       <div class="carrierPrice blocked"><b>ممنوع</b></div>
@@ -6455,8 +6503,8 @@
                 return `
                   <button class="carrierItem ${idx === 0 ? 'active bestCarrier' : ''}" type="button">
                     <div class="carrierLabel">
-                      <b>${carrier.label}<span class="carrierRank">${idx === 0 ? 'الأرخص' : '#' + (idx + 1)}</span></b>
-                      <small>${s.deliveryDays || carrier.time} · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
+                      <b><span class="carrierRank">${idx === 0 ? 'الأرخص' : '#' + (idx + 1)}</span><span class="carrierName">${carrier.label}</span></b>
+                      <small><span class="carrierEta">${s.deliveryDays || carrier.time}</span> · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                     </div>
                     ${feeAmount > 0 ? `
                       <div class="carrierPrice feeBreakdown">
@@ -7517,7 +7565,11 @@ Thank you.`;
 
       const select = document.getElementById('emergencyImportJsonCarrier');
       if (select && !select.dataset.populated) {
-        select.innerHTML = CARRIERS.map(c => `<option value="${c.id}">${escapeHtml(c.label)}</option>`).join('');
+        // Carrier labels are country-free (the country shows as the section
+        // heading in the UI), so this Developer-Mode import dropdown appends the
+        // immutable warehouseCode to keep every (country) option distinguishable
+        // here. Admin-only display text -- does not affect the customer cards.
+        select.innerHTML = CARRIERS.map(c => `<option value="${c.id}">${escapeHtml(c.label)} · ${escapeHtml(c.warehouseCode)}</option>`).join('');
         select.dataset.populated = '1';
       }
     }

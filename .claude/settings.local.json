@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command -v node)",
+      "Bash(node -e ' *)",
+      "Read(//c/tmp/scripts_check/**)"
+    ]
+  }
+}

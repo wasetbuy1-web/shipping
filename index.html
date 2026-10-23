@@ -4623,6 +4623,9 @@
     const CUSTOMS_SERVICE_MIN = 15;
     const CUSTOMS_SERVICE_MAX = 500;
     const VAT_RATE = 0.15;
+    const SHOPSHIP_SERVICE_THRESHOLD = 1000;
+    const SHOPSHIP_SERVICE_BELOW_THRESHOLD = 3.75;
+    const SHOPSHIP_SERVICE_AT_OR_ABOVE_THRESHOLD = 35;
 
     const EXTRA_FEE_DEFAULTS = {
       dangerousGoodsMinSar: 112,
@@ -5301,19 +5304,39 @@
       };
     }
 
-    function calcTax(amount) {
+    function customsServiceFee(amount) {
+      if (amount <= 0) return 0;
+      return Math.max(CUSTOMS_SERVICE_MIN, Math.min(CUSTOMS_SERVICE_MAX, amount * CUSTOMS_SERVICE_RATE));
+    }
+
+    function shopshipServiceFee(amount) {
+      if (amount <= 0) return 0;
+      return amount < SHOPSHIP_SERVICE_THRESHOLD
+        ? SHOPSHIP_SERVICE_BELOW_THRESHOLD
+        : SHOPSHIP_SERVICE_AT_OR_ABOVE_THRESHOLD;
+    }
+
+    function calcTax(amount, serviceFee = null) {
       if (amount <= 0) return 0;
       const duty = amount * CUSTOMS_DUTY_RATE;
-      const serviceBase = Math.max(CUSTOMS_SERVICE_MIN, Math.min(CUSTOMS_SERVICE_MAX, amount * CUSTOMS_SERVICE_RATE));
+      const serviceBase = serviceFee == null ? customsServiceFee(amount) : serviceFee;
       const subtaxBase = amount + duty + serviceBase;
       const vat = subtaxBase * VAT_RATE;
       return duty + serviceBase + vat;
+    }
+
+    function customsIncludesInternationalShipping(carrier) {
+      if (!carrier) return false;
+      if (carrier.source === 'shopship') return true;
+      return carrier.source === 'myus' && ['DHL', 'ARAMEX'].includes(carrier.carrierCode);
     }
 
     function getProductSummary(p, index = 0) {
       const priceRsar = productPriceSar(p, index);
       let shippingRsar = 0;
       let shippingInfo = null;
+      let customsValueAddition = 0;
+      let shopShipTaxableValue = 0;
       const supportsDis = isDiscountCarrier(p.carrierId);
       const discount = supportsDis ? state.carrierDiscount : 0;
 
@@ -5340,21 +5363,32 @@
           shippingInfo = selected.shipping;
           shippingRsar += selected.discountedPrice;
           automaticExtraFeeAmount = selected.assessment?.feeAmount || 0;
+          if (customsIncludesInternationalShipping(selected)) customsValueAddition += selected.discountedPrice;
+          if (selected.source === 'myus') customsValueAddition += automaticExtraFeeAmount;
+          if (selected.source === 'shopship') shopShipTaxableValue = priceRsar + selected.discountedPrice;
         } else {
           shippingInfo = lookupShipping(p.weight, p.weightUnit, p.carrierId);
           shippingRsar += shippingInfo.price;
           automaticExtraFeeAmount = autoExtraFeeForSelectedCarrier(p, index);
+          const selectedCarrier = CARRIERS.find(carrier => carrier.id === p.carrierId);
+          if (customsIncludesInternationalShipping(selectedCarrier)) customsValueAddition += shippingInfo.price;
+          if (selectedCarrier?.source === 'myus') customsValueAddition += automaticExtraFeeAmount;
+          if (selectedCarrier?.source === 'shopship') shopShipTaxableValue = priceRsar + shippingInfo.price;
         }
       }
 
       const manualAdditionalFeeAmount = (p.shippingType !== 'direct') ? manualAdditionalFeeSar(p) : 0;
       const additionalFeeAmount = manualAdditionalFeeAmount + automaticExtraFeeAmount;
+      const selectedCarrier = CARRIERS.find(carrier => carrier.id === p.carrierId);
+      if (selectedCarrier?.source === 'myus') customsValueAddition += manualAdditionalFeeAmount;
 
-      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, discount: isDiscountCarrier(p.carrierId) ? state.carrierDiscount : 0 };
+      return { priceRsar, shippingRsar, shippingInfo, additionalFeeAmount, automaticExtraFeeAmount, customsValueAddition, shopShipTaxableValue, discount: isDiscountCarrier(p.carrierId) ? state.carrierDiscount : 0 };
     }
 
     function currentCalcs() {
       let totalPrice = 0, totalShipping = 0, totalFees = 0;
+      let customsValueAddition = 0;
+      let shopShipTaxableValue = 0;
       let totalLocalShipping = 0;
       let combinedWeightLb = 0;
       let combinedMyusShipping = null;
@@ -5363,12 +5397,19 @@
         state.products.forEach((p, index) => {
           totalPrice += productPriceSar(p, index);
           totalLocalShipping += productLocalShippingSar(p);
-          totalFees += manualAdditionalFeeSar(p);
+          const manualFee = manualAdditionalFeeSar(p);
+          totalFees += manualFee;
+          customsValueAddition += manualFee;
           combinedWeightLb += productEnteredWeightLb(p);
         });
         combinedMyusShipping = getCombinedMyusShipping(combinedWeightLb);
         totalShipping = totalLocalShipping + (combinedMyusShipping?.shippingOnly ?? combinedMyusShipping?.price ?? 0);
         totalFees += combinedMyusShipping?.extraFeeAmount || 0;
+        if (customsIncludesInternationalShipping(combinedMyusShipping?.carrier)) {
+          customsValueAddition += combinedMyusShipping?.shippingOnly || 0;
+        }
+        // MyUS restriction fees are part of the customs/tax value when charged.
+        customsValueAddition += combinedMyusShipping?.extraFeeAmount || 0;
       } else if (isSingleSiteOrder()) {
         state.products.forEach((p, index) => {
           if (index === 0) {
@@ -5376,6 +5417,8 @@
             totalPrice += s.priceRsar;
             totalShipping += s.shippingRsar;
             totalFees += s.additionalFeeAmount;
+            customsValueAddition += s.customsValueAddition;
+            shopShipTaxableValue += s.shopShipTaxableValue;
           } else {
             totalPrice += productPriceSar(p, index);
           }
@@ -5386,6 +5429,8 @@
           totalPrice += s.priceRsar;
           totalShipping += s.shippingRsar;
           totalFees += s.additionalFeeAmount;
+          customsValueAddition += s.customsValueAddition;
+          shopShipTaxableValue += s.shopShipTaxableValue;
         });
       }
 
@@ -5396,7 +5441,10 @@
       const highCommission = Number(cc.highCommission ?? HIGH_COMMISSION) || 0;
       const commission = subtotal < threshold ? lowCommission : highCommission;
       const total = subtotal + commission;
-      const tax = calcTax(totalPrice);
+      const customsTaxableAmount = totalPrice + customsValueAddition;
+      const nonShopShipTaxableAmount = Math.max(0, customsTaxableAmount - shopShipTaxableValue);
+      const serviceFee = customsServiceFee(nonShopShipTaxableAmount) + shopshipServiceFee(shopShipTaxableValue);
+      const tax = calcTax(customsTaxableAmount, serviceFee);
       return { totalPrice, totalShipping, totalFees, totalLocalShipping, subtotal, commission, total, tax, threshold, lowCommission, highCommission, combinedWeightLb, combinedMyusShipping };
     }
 

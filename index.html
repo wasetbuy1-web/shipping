@@ -5168,9 +5168,23 @@
 
     function matchesAnyKeyword(text, keywords = []) {
       if (!text) return false;
+      // Whole-word matching (fix: 'stain' used to hit 'stainless', 'lsd' hit
+      // 'powertoolsdirect'). Keywords and text are normalized to single
+      // spaces; single-word keywords must appear as an exact word, multi-word
+      // keywords as the exact consecutive word sequence.
+      const words = text.split(/\s+/).filter(Boolean);
       return keywords.some(keyword => {
         const k = normalizeRuleText(keyword);
-        return k && text.includes(k);
+        if (!k) return false;
+        const kw = k.split(/\s+/).filter(Boolean);
+        if (kw.length === 1) return words.includes(kw[0]);
+        outer: for (let i = 0; i + kw.length <= words.length; i++) {
+          for (let j = 0; j < kw.length; j++) {
+            if (words[i + j] !== kw[j]) continue outer;
+          }
+          return true;
+        }
+        return false;
       });
     }
 

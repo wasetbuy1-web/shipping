@@ -4868,12 +4868,9 @@
       { id: 'shopship', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'US' },
       { id: 'shopship_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_US', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'US' },
 
-      // United Kingdom
-      { id: 'budget_uk', label: 'MyUS Budget (UK)', time: '8 - 14 يوم', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'BUDGET', country: 'UK' },
-      { id: 'aramex_uk', label: 'MyUS Aramex (UK)', time: '3 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'ARAMEX', country: 'UK' },
-      { id: 'fedex_uk', label: 'MyUS FedEx Priority (UK)', time: '3 - 6 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_PRIORITY', country: 'UK' },
-      { id: 'fedex_economy_uk', label: 'MyUS FedEx Economy (UK)', time: '', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'FEDEX_ECONOMY', country: 'UK' },
-      { id: 'dhl_uk', label: 'MyUS DHL (UK)', time: '2 - 5 أيام', source: 'myus', warehouseCode: 'MYUS_UK', carrierCode: 'DHL', country: 'UK' },
+      // United Kingdom — MyUS has NO UK warehouse (no MYUS_UK row in the DB);
+      // only Shop & Ship operates from the UK, so MyUS UK carriers are removed
+      // (they made every UK quote fail loading: 'تعذر تحميل أسعار MyUS').
       { id: 'shopship_uk', label: 'Shop & Ship Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_MEMBER', country: 'UK' },
       { id: 'shopship_uk_nonmember', label: 'Shop & Ship Non-Member', time: '4 - 7 أيام', source: 'shopship', warehouseCode: 'SHOPANDSHIP_UK', carrierCode: 'SHOPANDSHIP_NONMEMBER', country: 'UK' },
 

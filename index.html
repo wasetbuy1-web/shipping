@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=1100, initial-scale=1.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0e0d" />
   <title>حاسبة الشحن والعمولة</title>
   <style>
@@ -16,7 +16,7 @@
       --text: #e8f0ec;
       --textBright: #ffffff;
       --muted: #8a9a92;
-      --muted2: #6b7c74;
+      --muted2: #84968d;
       --border: rgba(255, 255, 255, .07);
       --borderHover: rgba(18, 161, 115, .35);
       --line: rgba(255, 255, 255, .05);
@@ -51,16 +51,17 @@
     body {
       margin: 0;
       min-height: 100vh;
-      min-width: 1100px;
+      width: 100%;
+      min-width: 0;
       background:
         radial-gradient(ellipse 80% 60% at 85% -10%, rgba(18, 161, 115, .12), transparent 50%),
         radial-gradient(ellipse 60% 50% at 5% 8%, rgba(252, 211, 77, .05), transparent 40%),
         radial-gradient(ellipse 70% 60% at 50% 100%, rgba(18, 161, 115, .06), transparent 50%),
         linear-gradient(180deg, var(--bg2) 0%, var(--bg) 50%, var(--bg3) 100%);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
+      font-family: "Cairo", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif;
       -webkit-font-smoothing: antialiased;
-      overflow-x: auto;
+      overflow-x: clip;
     }
 
     button, input, select, textarea {
@@ -3041,6 +3042,31 @@
       align-items: start;
     }
 
+    .orderFormSubactions,
+    .orderShipmentsEditorHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .orderProductRowActions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-start;
+      margin-top: -4px;
+    }
+
+    .orderShipmentsEditor {
+      display: grid;
+      gap: 9px;
+      padding: 11px;
+      border: 1px solid var(--borderHover);
+      border-radius: 14px;
+      background: rgba(18, 161, 115, .035);
+    }
+
     .orderFormGrid input[readonly] {
       background: rgba(0, 0, 0, .25);
       color: var(--text);
@@ -4192,7 +4218,253 @@
 
     .hidden { display: none !important; }
   </style>
-</head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style id="wssSmooth">
+      /* ===== واسط بيع · النظام البصري الجديد (Apple-flow + هوية خضراء) ===== */
+            :root {
+              --wss-radius: 16px;
+              --wss-ease: cubic-bezier(.22,.61,.36,1);
+              --wss-surface: rgba(22,30,27,.62);
+              --wss-line: rgba(255,255,255,.08);
+            }
+            /* أسطح شفافة + عمق (المادة المعلّقة) */
+            .card, .summary, .priceSidebar section, .workPanel > .field > .card, #ordersPage .card {
+              background: linear-gradient(180deg, rgba(30,40,36,.72), rgba(20,28,25,.55)) !important;
+              backdrop-filter: blur(16px) saturate(160%);
+              -webkit-backdrop-filter: blur(16px) saturate(160%);
+              border: 1px solid rgba(255,255,255,.06);
+              box-shadow: 0 18px 40px -24px rgba(0,0,0,.8);
+            }
+            .priceSidebar { position: sticky; top: 12px; align-self: flex-start; z-index: 5; }
+            .priceSidebar section { border-radius: var(--wss-radius); }
+            /* تيبوغرافي: عناوين متماسكة + أرقام جدولية */
+            h1, h2, h3, .summaryTitle, .cardTitle, .label, .discountTitle { letter-spacing: -0.01em; }
+            .summaryValue, #sumProductShipping, #sumTotal, .carrierItem b, .summary .summaryValue {
+              font-variant-numeric: tabular-nums;
+            }
+            .summaryValue { font-weight: 800 !important; }
+            #sumProductShipping, #sumTotal { font-variant-numeric: tabular-nums; }
+            /* أزرار: استجابة فورية على الضغط + كبسولات */
+            button, .shipBtn, .carrierItem, .discountChoice, .tabBtn, .inlineAddProductBtn, .smallBtn {
+              transition: transform .12s var(--wss-ease), border-color .18s ease, background-color .18s ease, box-shadow .2s ease, color .18s ease;
+              -webkit-tap-highlight-color: transparent;
+            }
+            button:active, .shipBtn:active, .carrierItem:active, .discountChoice:active, .tabBtn:active, .smallBtn:active { transform: scale(.97); }
+            @media (hover: hover) and (pointer: fine) {
+              .shipBtn:hover, .carrierItem:hover, .discountChoice:hover, .tabBtn:hover:not(.active), .smallBtn:hover, .inlineAddProductBtn:hover { transform: translateY(-1px); }
+            }
+            .shipBtn, .discountChoice, .carrierItem, .smallBtn { border-radius: 14px; }
+            .discountChoices { display: flex; gap: 6px; flex-wrap: nowrap; }
+            .discountChoice { flex: 1; min-height: 42px; font-weight: 700; border: 1px solid transparent; }
+            .discountChoice.active { background: linear-gradient(135deg, var(--primary), var(--primary2)); color: #fff; border-color: transparent; box-shadow: 0 6px 18px rgba(18,161,115,.35); }
+            .carrierItem { padding: 15px 16px; border-radius: 16px; }
+            .carrierItem.bestCarrier { border-color: rgba(18,161,115,.5); background: linear-gradient(135deg, rgba(18,161,115,.16), rgba(18,161,115,.05)); }
+            .carrierItem.active { box-shadow: inset 0 0 0 1px rgba(18,161,115,.55), 0 8px 26px rgba(18,161,115,.16); }
+            .carrierStarIco { color: var(--primary3); vertical-align: -2px; margin-inline-end: 2px; }
+            .btn.primary, .discountChoice.active, .carrierItem.bestCarrier .carrierRank, #mobilePriceBar .mpbCta { color: #06251b; }
+            .carrierItem.bestCarrier .carrierRank { font-weight: 900; }
+            /* شريط التقدم: كبسولات مرقمة متّصلة (Apple capsule stepper) */
+            #stepProgress { display: flex; gap: 0; margin: 14px 0 4px; position: relative; }
+            #stepProgress .spStep { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; position: relative; z-index: 2; }
+            #stepProgress .spStep::before { content: ''; position: absolute; top: 11px; right: -50%; width: 100%; height: 2px; background: rgba(255,255,255,.08); z-index: -1; }
+            #stepProgress .spStep:first-child::before { display: none; }
+            #stepProgress .spStep.done::before, #stepProgress .spStep.active::before { background: linear-gradient(90deg, var(--primary), var(--primary2)); }
+            #stepProgress .spDot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(255,255,255,.045); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14); color: var(--muted2); transition: background .22s var(--wss-ease), box-shadow .22s var(--wss-ease), transform .22s var(--wss-ease); }
+            #stepProgress .spNum { display: block; font-size: 11px; font-weight: 800; transition: opacity .15s ease; }
+            #stepProgress .spStep.done .spDot { background: linear-gradient(135deg, var(--primary), var(--primary2)); box-shadow: 0 0 12px rgba(18,161,115,.45); color: #fff; }
+            #stepProgress .spStep.done .spNum { opacity: 0; }
+            #stepProgress .spStep.done .spDot::after { content: '✓'; position: absolute; font-size: 12px; font-weight: 900; inset: 0; display: flex; align-items: center; justify-content: center; }
+            #stepProgress .spStep.active .spDot { background: linear-gradient(135deg, var(--primary3), var(--primary2)); box-shadow: 0 0 16px rgba(18,161,115,.6), inset 0 0 0 1.5px transparent; transform: scale(1.1); color: #fff; }
+            #stepProgress .spStep.done .spDot, #stepProgress .spStep.active .spDot { color: #06251b; }
+            #stepProgress .spLabel { max-width: 100%; font-size: 10.5px; color: var(--muted2); text-align: center; white-space: normal; line-height: 1.25; transition: color .25s ease; }
+            #stepProgress .spStep.done .spLabel, #stepProgress .spStep.active .spLabel { color: var(--textBright); font-weight: 700; }
+            /* نبض السعر (أقل من 300ms) */
+            @keyframes wssPulse { 0% { transform: scale(1); } 40% { transform: scale(1.05); color: var(--primary3); } 100% { transform: scale(1); } }
+            .wss-price-pulse { animation: wssPulse .24s ease-out; }
+            /* شريط السعر الثابت (mobile) — مادة معلّقة شفافة */
+            #mobilePriceBar { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: rgba(13,19,17,.92); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); border-top: 1px solid rgba(255,255,255,.08); }
+            #mobilePriceBar .mpbL { display: flex; flex-direction: column; }
+            #mobilePriceBar .mpbLabel { font-size: 11px; color: var(--muted); letter-spacing: .01em; }
+            #mobilePriceBar .mpbValue { font-size: 20px; font-weight: 800; color: var(--primary3); line-height: 1.1; font-variant-numeric: tabular-nums; }
+            #mobilePriceBar .mpbCta { border: none; min-height: 44px; padding: 11px 22px; border-radius: 99px; background: linear-gradient(135deg, var(--primary), var(--primary2)); font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 6px 20px rgba(18,161,115,.4); }
+            html.wss-mobile body { padding-bottom: 0; }
+            html.wss-price-visible.wss-mobile body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+            html.wss-mobile .priceSidebar { position: static; }
+            html.wss-mobile .shipBtn { min-height: 54px; }
+            html.wss-mobile .carrierItem { padding: 16px; }
+            .weightSaveStatus { min-height: 18px; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+            .weightSaveStatus.is-loading { color: var(--warning); }
+            .weightSaveStatus.is-success { color: var(--primary3); }
+            .weightSaveStatus.is-error { color: #ff8f8f; }
+            .directShippingRow { grid-template-columns: minmax(0, 1.3fr) minmax(118px, .65fr) minmax(180px, 1fr); align-items: end; }
+            .directShippingRow > div { min-width: 0; }
+            .directShippingRow .label { min-height: 1.5em; }
+            .weightSourceRow { grid-template-columns: minmax(150px, 1.2fr) minmax(90px, .75fr) minmax(78px, .62fr) minmax(145px, 1.15fr) minmax(150px, 1fr); align-items: end; }
+            .weightSourceRow > div { display: flex; flex-direction: column; min-width: 0; }
+            .weightSourceRow > div > .label, .weightSourceRow .weightEstimateHint { display: flex; align-items: center; justify-content: center; height: 36px; min-height: 36px; margin: 0 0 6px; text-align: center; line-height: 1.25; }
+            .weightSourceRow .savedWeightInlineBox { width: 100%; height: 48px; min-height: 48px; justify-content: center; }
+            .weightSourceRow .savedWeightInlineMain { justify-items: center; text-align: center; }
+            .weightSourceRow .savedWeightControls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 6px; }
+            .weightSourceRow .savedWeightControls .savedWeightInlineBox { width: auto; min-width: 0; padding: 6px 8px; }
+            .weightSourceRow .savedWeightSaveBtn { width: auto; min-width: 0; min-height: 48px; padding: 8px 10px; white-space: nowrap; justify-content: center; }
+            .weightSourceRow .input, .weightSourceRow select { width: 100%; min-width: 0; min-height: 48px; text-align: center; }
+            .weightSourceRow .savedWeightInlineMain span { overflow-wrap: anywhere; }
+            .weightEstimateAction { display: flex; flex-direction: column; align-self: end; min-width: 0; }
+            .weightEstimateAction .smallBtn { width: 100%; min-height: 48px; justify-content: center; }
+            .weightEstimateAction .smallBtn:disabled { opacity: .48; cursor: not-allowed; filter: saturate(.55); box-shadow: none; transform: none; }
+            .weightEstimateHint { color: var(--muted); font-size: 9.5px; }
+            .weightActionsRow { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+            .weightActionsRow .smallBtn { min-height: 44px; }
+            input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--primary3); outline-offset: 2px; }
+            a:focus-visible { outline: 2px solid var(--primary3); outline-offset: 2px; border-radius: 4px; }
+            @media (max-width: 1000px) {
+              .appGrid { grid-template-columns: minmax(0, 1fr); }
+              .workPanel, .priceSidebar, .card, .summary { min-width: 0; }
+            }
+            @media (max-width: 700px) {
+              .wrap { width: 100%; padding: 14px 12px calc(28px + env(safe-area-inset-bottom)); }
+              .header { align-items: stretch; flex-direction: column; gap: 12px; }
+              .headerBrand, .headerActions { width: 100%; }
+              .headerActions { justify-content: flex-end; }
+              .productMainRow, .productSupportRow, .weightSourceRow, .weightActionsRow { min-width: 0; }
+              .directShippingRow { grid-template-columns: minmax(0, 1fr) minmax(104px, .65fr); }
+              .directShippingRow > div:last-child { grid-column: 1 / -1; }
+              .weightSourceRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+              .weightSourceRow > :first-child { grid-column: 1 / -1; }
+              .weightActionsRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+              .discountChoice { min-height: 44px; }
+              .smallBtn { min-height: 44px; }
+              #stepProgress { margin-inline: 2px; }
+              #stepProgress .spStep { min-width: 0; gap: 6px; }
+              #stepProgress .spLabel { min-height: 2.5em; font-size: 9.5px; }
+              .singleSiteProductsTableWrap { overflow: visible; padding-bottom: 0; }
+              .singleSiteProductsGrid { min-width: 0; gap: 10px; }
+              .singleSiteProductsHeader { display: none; }
+              .singleSiteProductsRow { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px; }
+              .singleSiteProductsRow .fieldCell { min-width: 0; }
+              .singleSiteProductsRow .fieldCell::before { content: attr(data-label); display: block; margin: 0 2px 6px; color: var(--muted); font-size: 11px; font-weight: 800; }
+              .singleSiteProductsRow .fieldCell[data-label="رابط المنتج"], .singleSiteProductsRow .fieldCell[data-label="اسم المنتج"] { grid-column: 1 / -1; }
+              .singleSiteDeleteCell { grid-column: 1 / -1; justify-content: flex-end; }
+              .singleSiteDeleteCell .deleteBtn { width: 44px; height: 44px; }
+            }
+            @media (min-width: 701px) and (max-width: 850px) {
+              .weightSourceRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+              .weightSourceRow > :first-child { grid-column: 1 / -1; }
+            }
+            @media (max-width: 460px) {
+              .wrap { padding-inline: 10px; }
+              .header { padding: 12px; }
+              .brandText h1 { font-size: 17px; }
+              .weightSourceRow { grid-template-columns: minmax(0, 1fr); }
+              .weightSourceRow > :first-child { grid-column: auto; }
+              #stepProgress .spLabel { font-size: 9px; }
+              #mobilePriceBar { gap: 8px; padding-inline: 10px; }
+              #mobilePriceBar .mpbValue { font-size: 18px; }
+              #mobilePriceBar .mpbCta { padding-inline: 14px; }
+              .singleSiteProductsRow { gap: 8px; padding: 10px; }
+              .singleSiteProductsRow .input, .singleSiteProductsRow select { min-height: 44px; }
+            }
+            @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+            @media (prefers-reduced-transparency: reduce) { .card, .summary, .priceSidebar section, #mobilePriceBar { background: var(--cardSolid) !important; backdrop-filter: none !important; } }
+
+            /* Orders board: searchable glass dashboard and compact cards. */
+            #ordersPage .ordersToolbar {
+              position: sticky;
+              top: 8px;
+              z-index: 20;
+              padding: 10px;
+              border: 1px solid var(--wss-line);
+              border-radius: 16px;
+              background: rgba(14, 21, 18, .88);
+              backdrop-filter: blur(18px) saturate(145%);
+              -webkit-backdrop-filter: blur(18px) saturate(145%);
+              box-shadow: 0 12px 28px rgba(0,0,0,.24);
+            }
+            #ordersPage .ordersSearchWrap { display: grid; grid-template-columns: 1fr; gap: 5px; }
+            #ordersPage .ordersSearchWrap .label { font-size: 11px; }
+            #ordersPage #orderSearch { min-height: 46px; border-radius: 14px; }
+            .ordersDashboard { display: grid; gap: 10px; }
+            .ordersCounters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+            .ordersCounter {
+              display: flex; align-items: center; justify-content: space-between; gap: 10px;
+              min-width: 0; padding: 11px 13px; border: 1px solid var(--wss-line); border-radius: 15px;
+              background: linear-gradient(160deg, rgba(30,40,36,.72), rgba(20,28,25,.58));
+              box-shadow: 0 9px 22px rgba(0,0,0,.16); color: var(--muted); font-size: 11px; font-weight: 800;
+            }
+            .ordersCounter b { color: var(--textBright); font-size: 18px; font-variant-numeric: tabular-nums; }
+            .orderStatusFilters { display: flex; align-items: center; gap: 7px; overflow-x: auto; padding: 1px 1px 5px; scrollbar-width: thin; }
+            .orderFilterChip {
+              flex: 0 0 auto; min-height: 38px; padding: 7px 12px; border: 1px solid var(--wss-line); border-radius: 999px;
+              background: rgba(255,255,255,.035); color: var(--muted); font: inherit; font-size: 11px; font-weight: 800; cursor: pointer;
+              transition: transform .14s var(--wss-ease), background-color .18s ease, border-color .18s ease, color .18s ease;
+            }
+            .orderFilterChip span { margin-inline-start: 5px; color: var(--muted2); font-variant-numeric: tabular-nums; }
+            .orderFilterChip[aria-pressed="true"] { color: #06251b; background: linear-gradient(135deg,var(--primary),var(--primary2)); border-color: transparent; box-shadow: 0 5px 16px rgba(18,161,115,.22); }
+            .orderFilterChip[aria-pressed="true"] span { color: rgba(6,37,27,.75); }
+            @media (hover:hover) and (pointer:fine) { .orderFilterChip:hover { transform: translateY(-1px); } }
+            .ordersKanban.orderStatusFiltered { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+            .ordersKanban.orderStatusFiltered .kanbanColumn { min-width: 0; }
+            .kanbanColumn { background: linear-gradient(160deg, rgba(24,33,29,.74), rgba(15,22,19,.6)); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; }
+            .kanbanCards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); align-items: start; }
+            .orderCard {
+              gap: 10px; padding: 12px; border-radius: 16px;
+              background: linear-gradient(160deg, rgba(30,40,36,.84), rgba(17,25,21,.78));
+              border-color: var(--wss-line); box-shadow: 0 13px 30px -20px rgba(0,0,0,.8);
+              backdrop-filter: blur(14px) saturate(135%); -webkit-backdrop-filter: blur(14px) saturate(135%);
+            }
+            .orderCard.needsAttention { background: linear-gradient(145deg, rgba(94,67,20,.22), rgba(17,25,21,.82)); }
+            .orderCard.sellerFollowup { background: linear-gradient(145deg, rgba(91,35,35,.24), rgba(17,25,21,.82)); }
+            .orderCardSummary { display: grid; gap: 9px; }
+            .orderCardSummaryTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+            .orderCardSummaryIdentity { min-width: 0; display: grid; gap: 3px; }
+            .orderCardSummaryIdentity .orderCustomerTitle { justify-self: start; text-align: start; color: var(--textBright); font-size: 14px; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .orderCardNumber { color: var(--muted2); font-size: 10px; direction: ltr; text-align: start; }
+            .orderCardStatusBadge { flex: 0 0 auto; padding: 5px 9px; border: 1px solid var(--borderHover); border-radius: 999px; color: var(--primary2); background: rgba(18,161,115,.11); font-size: 10px; font-weight: 900; }
+            .orderCardSummaryMeta, .orderCardNumber, #ordersPage .orderMetaGrid { font-variant-numeric: tabular-nums; }
+            .orderCardSummaryMeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
+            .orderCardSummaryMeta > span { min-width: 0; }
+            .orderLastUpdatePill { justify-self: start; padding: 4px 8px; font-size: 9.5px; }
+            .orderCardQuickActions { display: flex; gap: 7px; }
+            .orderCardQuickActions .smallBtn { flex: 1; min-height: 38px; justify-content: center; }
+            .orderCardDetails { display: block; min-width: 0; }
+            .orderCardDetails summary { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; margin: 0; border-radius: 12px; }
+            .orderCardDetails[open] summary { margin-bottom: 9px; }
+            .orderCardDetails[open] { display: grid; gap: 8px; }
+            .orderCardProductLinks, .shipmentPillsRow { margin-top: 0; }
+            .inlineOrderTracking { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) auto; align-items: end; gap: 7px; padding: 10px; border: 1px solid var(--wss-line); border-radius: 14px; background: rgba(0,0,0,.17); }
+            .inlineOrderTracking > div { min-width: 0; }
+            .inlineOrderTracking .label { margin-bottom: 4px; font-size: 10px; }
+            .inlineOrderTracking .input { min-height: 39px; padding: 7px 9px; font-size: 11px; }
+            .inlineOrderTracking [data-order-tracking] { font-variant-numeric: tabular-nums; }
+            .inlineOrderTracking .smallBtn { min-height: 39px; white-space: nowrap; }
+            #ordersPage .orderCardActions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #ordersPage .orderMetaGrid span { white-space: normal; }
+            @media (max-width: 700px) {
+              #ordersPage .ordersToolbar { top: 4px; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; padding: 8px; }
+              #ordersPage .ordersSearchWrap .label { display: none; }
+              #ordersPage #orderSearch { min-height: 42px; padding-inline: 10px; font-size: 11px; }
+              #ordersPage .ordersToolbar > .btn { width: auto; min-height: 42px; padding: 7px 10px; font-size: 10px; white-space: nowrap; }
+              #ordersPage .ordersAlertSummary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+              #ordersPage .alertSummaryBox { padding: 9px 10px; font-size: 10px; }
+              #ordersPage .alertSummaryBox b { display: inline-block; margin: 0 0 0 4px; font-size: 16px; }
+              .ordersCounters { gap: 6px; }
+              .ordersCounter { align-items: flex-start; flex-direction: column-reverse; gap: 4px; padding: 9px; font-size: 10px; }
+              .ordersCounter b { font-size: 17px; }
+              #ordersPage .ordersKanban { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+              #ordersPage .kanbanColumn { min-width: 0; padding: 9px; }
+              #ordersPage .kanbanCards { grid-template-columns: minmax(0, 1fr); }
+              #ordersPage .orderCard { width: 100%; }
+              .inlineOrderTracking { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+              .inlineOrderTracking .smallBtn { grid-column: 1 / -1; width: 100%; }
+              #ordersPage .orderCardActions { grid-template-columns: minmax(0, 1fr); }
+            }
+            @media (prefers-reduced-transparency: reduce) {
+              #ordersPage .ordersToolbar, .ordersCounter, .kanbanColumn, .orderCard { background: var(--cardSolid, #18211d) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+            }
+    </style>
+  </head>
 <body>
   <main class="wrap">
     <header class="header">
@@ -4442,10 +4714,15 @@
         <div class="ordersToolbar">
           <div class="ordersSearchWrap">
             <label class="label">بحث في الطلبات</label>
-            <input class="input" id="orderSearch" type="search" placeholder="اسم العميل، عنوان مختصر، رقم طلب الموقع، رقم التتبع...">
+            <input class="input" id="orderSearch" type="search" placeholder="اسم العميل، الجوال، رقم الطلب أو التتبع، الناقل...">
           </div>
           <button class="btn" id="scrollToOrderForm" type="button">إضافة / تعديل طلب</button>
         </div>
+
+        <section class="ordersDashboard" aria-label="ملخص الطلبات وفلاتر الحالة">
+          <div class="ordersCounters" id="ordersCounters" aria-live="polite"></div>
+          <div class="orderStatusFilters" id="orderStatusFilters" role="group" aria-label="تصفية الطلبات حسب الحالة"></div>
+        </section>
 
         <div class="ordersKanban" id="ordersKanban" aria-label="لوحة متابعة الطلبات"></div>
 
@@ -4467,8 +4744,8 @@
                 <input class="input" id="orderCustomerTitle" type="text" placeholder="مثال: 12345678901234">
               </div>
               <div>
-                <label class="label">رابط واتساب العميل</label>
-                <input class="input ltr" id="orderWhatsapp" type="url" placeholder="https://wa.me/966...">
+                <label class="label">رقم واتساب العميل</label>
+                <input class="input ltr" id="orderWhatsapp" type="tel" inputmode="tel" autocomplete="tel" placeholder="05xxxxxxxx أو 9665xxxxxxxx">
               </div>
               <div>
                 <label class="label">تاريخ الشراء</label>
@@ -4478,6 +4755,29 @@
 
             <!-- Row 2: dynamic product rows (injected by JS) -->
             <div id="orderProductRowsContainer"></div>
+
+            <div class="orderFormSubactions">
+              <button class="smallBtn" id="addOrderProductBtn" type="button">＋ إضافة منتج</button>
+            </div>
+
+            <div class="orderRow2">
+              <div>
+                <label class="label" for="orderTracking">رقم التتبع الرئيسي</label>
+                <input class="input ltr" id="orderTracking" type="text" placeholder="رقم تتبع الشحنة">
+              </div>
+              <div>
+                <label class="label" for="orderCarrier">الناقل</label>
+                <input class="input" id="orderCarrier" type="text" placeholder="مثال: DHL أو أرامكس">
+              </div>
+            </div>
+
+            <section class="orderShipmentsEditor" aria-label="الشحنات المرتبطة بالطلب">
+              <div class="orderShipmentsEditorHeader">
+                <span class="shipmentsSectionTitle">الشحنات المرتبطة بالطلب</span>
+                <button class="smallBtn" id="addShipmentBtn" type="button">＋ إضافة شحنة</button>
+              </div>
+              <div class="shipmentsContainer" id="shipmentsContainer"></div>
+            </section>
 
             <!-- Row 3: notes inline -->
             <div class="notesInlineRow">
@@ -4985,6 +5285,27 @@
       quantityWeightApplied: false
     });
 
+    const PRODUCT_NUMERIC_FIELDS = new Set([
+      'price', 'quantity', 'exchangeRate', 'directShippingCost',
+      'directShippingRate', 'localShippingCost', 'weight', 'additionalFeeAmount'
+    ]);
+
+    function sanitizeProductNumericValue(product, field, value) {
+      const raw = String(value ?? '').trim();
+      if (!raw) return field === 'quantity' ? '1' : '';
+      const number = Number(raw);
+      if (!Number.isFinite(number)) return '';
+      if (field === 'quantity') return String(Math.max(1, Math.floor(number)));
+      if (field === 'weight') return number > 0 ? raw : '';
+      if (field === 'exchangeRate' || field === 'directShippingRate') {
+        if (number > 0) return raw;
+        const currencyCode = field === 'exchangeRate' ? product.currency : product.directShippingCurrency;
+        const defaultRate = CURRENCIES.find(currency => currency.code === currencyCode)?.defaultRate;
+        return String(defaultRate || 1);
+      }
+      return String(Math.max(0, number));
+    }
+
     const todayInput = () => new Date().toISOString().slice(0, 10);
     const orderTemplate = () => ({
       id: uid(), customerName: '', customerShortTitle: '', orderNumber: '', sellerOrderNumber: '', sellerName: '',
@@ -5006,6 +5327,9 @@
       base.orderShippingMode = base.orderShippingMode === 'myusCombined' ? 'myusCombined' : 'independent';
       // Default to 'US' when missing/invalid so older stored quotes are unchanged.
       base.shippingCountry = ['US', 'UK', 'SG', 'DE'].includes(base.shippingCountry) ? base.shippingCountry : 'US';
+      if (base.orderShippingMode === 'myusCombined' && base.shippingCountry !== 'US') {
+        base.orderShippingMode = 'independent';
+      }
       base.commissionConfig = base.commissionConfig || { threshold: COMMISSION_THRESHOLD, lowCommission: LOW_COMMISSION, highCommission: HIGH_COMMISSION };
       base.restrictionFeeConfig = { ...defaultRestrictionFeeConfig(), ...(base.restrictionFeeConfig || {}) };
       if (!base.discountDefaultApplied) {
@@ -5042,7 +5366,9 @@
       base.currentQuoteId = base.currentQuoteId || uid();
       base.products = base.products.map(p => {
         const merged = { ...productTemplate(), ...p };
-        merged.quantity = Math.max(1, parseFloat(merged.quantity) || 1);
+        PRODUCT_NUMERIC_FIELDS.forEach(field => {
+          merged[field] = sanitizeProductNumericValue(merged, field, merged[field]);
+        });
         merged.quantityWeightApplied = !!merged.quantityWeightApplied;
         if (!merged.link && !merged.name && !merged.price && !merged.weight && !merged.directShippingCost && !merged.localShippingCost) {
           merged.shippingType = '';
@@ -5125,7 +5451,8 @@
     }
 
     function isMyusCombinedMode() {
-      return isMultiSiteOrder() && state.orderShippingMode === 'myusCombined' && state.products.length > 1;
+      return isMultiSiteOrder() && state.orderShippingMode === 'myusCombined'
+        && getSelectedCountry() === 'US' && state.products.length > 1;
     }
 
     function productPriceSar(p, index = 0) {
@@ -5555,10 +5882,82 @@
       toast('تم تحويل الوزن');
     }
 
+    const autoSavingWeights = new Set();
+
+    function setWeightSaveStatus(productId, message, stateName = '') {
+      const card = Array.from(document.querySelectorAll('[data-product-id]'))
+        .find(el => el.dataset.productId === productId);
+      const status = card?.querySelector('.weightSaveStatus');
+      if (!status) return;
+      status.className = 'weightSaveStatus' + (stateName ? ' is-' + stateName : '');
+      status.textContent = message;
+    }
+
+    async function autoSaveWeightFromProduct(productId) {
+      const p = state.products.find(pr => pr.id === productId);
+      if (!p || autoSavingWeights.has(productId)) return;
+
+      const url = p.link?.trim() || '';
+      const name = p.name?.trim() || '';
+      const weight = parseFloat(p.weight) || 0;
+      if (!isValidProductUrl(url) || !name || weight <= 0) {
+        if (weight > 0) {
+          const message = !name
+            ? 'أكمل اسم المنتج ليُحفظ الوزن تلقائيًا.'
+            : !isValidProductUrl(url)
+              ? 'أدخل رابطًا صحيحًا للمنتج ليُحفظ الوزن.'
+              : 'أدخل وزنًا صحيحًا أكبر من صفر.';
+          setWeightSaveStatus(productId, message);
+        }
+        return;
+      }
+
+      const weightLb = p.weightUnit === 'kg' ? getWeightLb(weight, 'kg') : weight;
+      const existing = findSavedWeightMatch(url, name);
+      if (existing && existing.url === url && existing.name === name && Math.abs(Number(existing.weight) - weightLb) < 0.01) {
+        setWeightSaveStatus(productId, 'الوزن محفوظ مسبقًا.', 'success');
+        return;
+      }
+
+      autoSavingWeights.add(productId);
+      setWeightSaveStatus(productId, 'جارٍ حفظ الوزن…', 'loading');
+      try {
+        const row = existing
+          ? await updateSavedWeightRow(existing.id, { url, name, weight: weightLb })
+          : await createSavedWeightRow({ url, name, weight: weightLb });
+        const saved = {
+          id: row.id,
+          url: row.product_url || url,
+          name: row.product_name || name,
+          weight: Number(row.weight_lb ?? weightLb),
+          updatedAt: row.updated_at || new Date().toISOString()
+        };
+        const savedIndex = state.savedWeights.findIndex(item => item.id === saved.id);
+        if (savedIndex >= 0) state.savedWeights[savedIndex] = saved;
+        else state.savedWeights.unshift(saved);
+
+        renderSavedWeights();
+        renderSavedWeightsFileStatus();
+        const card = Array.from(document.querySelectorAll('[data-product-id]'))
+          .find(el => el.dataset.productId === productId);
+        const inline = card?.querySelector('.savedWeightInlineBox');
+        if (inline) {
+          inline.classList.remove('empty');
+          inline.innerHTML = '<div class="savedWeightInlineMain"><b>' + fmt(saved.weight) + ' رطل</b><span>' + escapeHtml(compactUrlLabel(url)) + '</span></div>';
+        }
+        setWeightSaveStatus(productId, 'تم حفظ الوزن تلقائيًا.', 'success');
+      } catch (err) {
+        console.error(err);
+        setWeightSaveStatus(productId, 'تعذر الحفظ تلقائيًا. اضغط «حفظ الآن» لإعادة المحاولة.', 'error');
+      } finally {
+        autoSavingWeights.delete(productId);
+      }
+    }
+
     async function saveWeightFromProduct(productId) {
       const p = state.products.find(pr => pr.id === productId);
       if (!p) return;
-      if (!p.link?.trim()) { toast('أدخل رابط المنتج أولاً'); return; }
+      if (!isValidProductUrl(p.link)) { toast('أدخل رابطًا صحيحًا يبدأ بـ http:// أو https:// أولاً.'); return; }
       if (!p.name?.trim()) { toast('أدخل اسم المنتج أولاً'); return; }
       if (!p.weight) { toast('أدخل الوزن أولاً'); return; }
 
@@ -5680,7 +6079,8 @@
       // Shared instructions (asked once) describing what is required per product.
       const header = `أحتاج تقدير وزن المنتجات التالية بالرطل (lb).\n\nلكل منتج أعطني:\nالوزن الفعلي عند الشحن مع التغليف العادي\nالأبعاد بالبوصة (in)\nالمصادر\nنسبة التأكد`;
       // One block per product, in the same order they appear in the order.
-      const blocks = list.map((p, i) => (
+      const completeProducts = list.filter(p => p?.name?.trim() && isValidProductUrl(p.link));
+      const blocks = completeProducts.map((p, i) => (
         `----------------------------------------\n\nالمنتج #${i + 1}\n\nاسم المنتج:\n${p.name || '—'}\n\nالرابط:\n${p.link || '—'}`
       )).join('\n\n');
       return `${header}\n\n${blocks}`;
@@ -5690,9 +6090,58 @@
       return `صنّف هذا المنتج إلى أحد الأنواع التالية فقط:\n${PRODUCT_TYPES.join('\n')}\n\nاسم المنتج: ${p.name || '—'}\nالرابط: ${p.link || '—'}\n\nأعطني فقط اسم الفئة من القائمة أعلاه، بدون نص إضافي.`;
     }
 
+    function isValidProductUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return false;
+      try {
+        const url = new URL(raw);
+        return ['http:', 'https:'].includes(url.protocol) && !!url.hostname;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function weightEstimateState(p) {
+      const hasName = !!p?.name?.trim();
+      const rawLink = String(p?.link || '').trim();
+      const hasLink = isValidProductUrl(rawLink);
+      return {
+        ready: hasName && hasLink,
+        hint: hasName && hasLink
+          ? 'الاسم والرابط جاهزان لتقدير الوزن.'
+          : !hasName && !rawLink
+            ? 'لتقدير الوزن، أدخل اسم المنتج ورابطه أولًا.'
+            : !hasName
+              ? 'أدخل اسم المنتج لتفعيل تقدير الوزن.'
+              : rawLink && !hasLink
+                ? 'أدخل رابطًا صحيحًا يبدأ بـ https:// أو http://.'
+              : 'أدخل رابط المنتج لتفعيل تقدير الوزن.'
+      };
+    }
+
+    function syncWeightEstimateAvailability(productId) {
+      const p = state.products.find(pr => pr.id === productId);
+      const card = Array.from(document.querySelectorAll('.card[data-product-id]'))
+        .find(el => el.dataset.productId === productId);
+      const button = card?.querySelector('.weightEstimateAction button');
+      const hint = card?.querySelector('.weightEstimateHint');
+      if (!p || !button || !hint) return;
+
+      const availability = weightEstimateState(p);
+      const isLoading = aiLoadingProductId === productId;
+      button.disabled = !availability.ready || isLoading;
+      button.setAttribute('aria-disabled', String(button.disabled));
+      button.title = isLoading ? 'جارٍ تجهيز طلب التقدير.' : availability.hint;
+      hint.textContent = isLoading ? 'جارٍ تجهيز طلب التقدير…' : availability.hint;
+    }
+
     function estimateWeight(productId) {
       const p = state.products.find(pr => pr.id === productId);
       if (!p) return;
+      if (!p.name?.trim() || !isValidProductUrl(p.link)) {
+        toast('أدخل اسم المنتج ورابطًا صحيحًا يبدأ بـ http:// أو https:// قبل التقدير.');
+        return;
+      }
       aiLoadingProductId = productId;
       render();
       setTimeout(() => {
@@ -5764,15 +6213,34 @@
     function updateProduct(id, field, value, shouldRender = true) {
       const p = state.products.find(pr => pr.id === id);
       if (!p) return;
-      p[field] = value;
+      const previousValue = p[field];
+      const identityChanged = ['name', 'link'].includes(field)
+        && normalizeMatchText(previousValue) !== normalizeMatchText(value);
+      p[field] = PRODUCT_NUMERIC_FIELDS.has(field)
+        ? sanitizeProductNumericValue(p, field, value)
+        : value;
+
+      if (PRODUCT_NUMERIC_FIELDS.has(field)) {
+        const active = document.activeElement;
+        const activeProductId = active?.closest('[data-product-id]')?.dataset.productId;
+        if (active instanceof HTMLInputElement && active.type === 'number' && activeProductId === id) {
+          active.value = p[field] ?? '';
+        }
+      }
 
       if (['weight', 'quantity', 'weightUnit'].includes(field)) {
         p.quantityWeightApplied = false;
       }
 
-      if (field === 'name' || field === 'link') {
+      if (identityChanged) {
         const saved = checkSavedWeight(p.name, p.link);
         if (saved) fillSavedWeightForProduct(p, saved);
+        else {
+          p.weight = '';
+          p.weightUnit = 'lb';
+          p.weightSource = '';
+          p.quantityWeightApplied = false;
+        }
       }
 
       if (field === 'shippingType' && value === 'direct') {
@@ -5809,6 +6277,7 @@
         renderSummary();
         updateProgressiveVisibility(id);
       }
+      if (field === 'name' || field === 'link') syncWeightEstimateAvailability(id);
     }
 
     function hasProductPrice(p) {
@@ -5856,11 +6325,16 @@
     function setShippingCountry(code) {
       if (!SHIPPING_COUNTRY_CODES.includes(code)) return;
       if (state.shippingCountry === code) return;
+      const switchedFromUnsupportedCombined = state.orderShippingMode === 'myusCombined' && code !== 'US';
+      if (switchedFromUnsupportedCombined) state.orderShippingMode = 'independent';
       state.shippingCountry = code;
       const defaultCarrierId = (carriersForCountry(code)[0] || {}).id || '';
       (state.products || []).forEach(p => { p.carrierId = defaultCarrierId; });
       saveState();
       render();
+      if (switchedFromUnsupportedCombined) {
+        toast('الشحنة المجمعة MyUS متاحة للشحن من الولايات المتحدة فقط؛ تم التحويل إلى الشحن المستقل.');
+      }
       // Load this country's rates on demand (safe no-op if not yet booted).
       loadRatesForSelectedCountry();
     }
@@ -5908,7 +6382,7 @@
               </select>
               ${p.additionalFee === 'custom' ? `
                 <div style="margin-top: 8px;">
-                  <input class="input" type="number" inputmode="decimal" placeholder="مبلغ الرسوم بالدولار" value="${p.additionalFeeAmount}" oninput="updateProduct('${p.id}', 'additionalFeeAmount', this.value, false)" onblur="render()">
+                  <input class="input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="مبلغ الرسوم بالدولار" value="${p.additionalFeeAmount}" oninput="updateProduct('${p.id}', 'additionalFeeAmount', this.value, false)" onblur="renderAfterBlur()">
                 </div>
               ` : ''}
               <div class="buttonRow" style="margin-top: 8px;">
@@ -5940,25 +6414,25 @@
             <div class="fieldCell">
               ${fieldLabel('سعر المنتج')}
               <div class="inputWithPaste">
-                <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+                <input class="input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="renderAfterBlur()">
                 ${pasteIconBtn(p.id, 'price')}
               </div>
             </div>
             <div class="fieldCell">
               ${fieldLabel('الكمية')}
-              <input class="input" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(p.quantity ?? 1)}" oninput="updateProduct('${p.id}', 'quantity', this.value || 1, false)" onblur="render()">
+              <input class="input" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(p.quantity ?? 1)}" oninput="updateProduct('${p.id}', 'quantity', this.value || 1, false)" onblur="renderAfterBlur()">
             </div>
             <div class="fieldCell">
               ${fieldLabel('رابط المنتج')}
               <div class="inputWithPaste">
-                <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+                <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="renderAfterBlur('${p.id}', true)">
                 ${pasteIconBtn(p.id, 'link')}
               </div>
             </div>
             <div class="fieldCell">
               ${fieldLabel('اسم المنتج')}
               <div class="inputWithPaste">
-                <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+                <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="renderAfterBlur('${p.id}', true)">
                 ${pasteIconBtn(p.id, 'name')}
               </div>
             </div>
@@ -5980,29 +6454,29 @@
       const isExtra = index > 0;
       return `
         <div class="singleSiteProductsRow" data-product-id="${p.id}">
-          <div class="fieldCell">
+          <div class="fieldCell" data-label="سعر المنتج">
             <div class="inputWithPaste">
-              <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="render()">
+              <input class="input" type="number" inputmode="decimal" min="0" step="0.01" aria-label="سعر المنتج" placeholder="0.00" value="${escapeHtml(p.price)}" oninput="updateProduct('${p.id}', 'price', this.value, false)" onblur="renderAfterBlur()">
               ${pasteIconBtn(p.id, 'price')}
             </div>
           </div>
-          <div class="fieldCell">
-            <input class="input" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(p.quantity ?? 1)}" oninput="updateProduct('${p.id}', 'quantity', this.value || 1, false)" onblur="render()">
+          <div class="fieldCell" data-label="الكمية">
+            <input class="input" type="number" inputmode="numeric" min="1" step="1" aria-label="الكمية" value="${escapeHtml(p.quantity ?? 1)}" oninput="updateProduct('${p.id}', 'quantity', this.value || 1, false)" onblur="renderAfterBlur()">
           </div>
-          <div class="fieldCell">
+          <div class="fieldCell" data-label="رابط المنتج">
             <div class="inputWithPaste">
-              <input class="input ltr" type="url" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="render()">
+              <input class="input ltr" type="url" aria-label="رابط المنتج" placeholder="https://..." value="${escapeHtml(p.link)}" oninput="updateProduct('${p.id}', 'link', this.value, false)" onblur="renderAfterBlur('${p.id}', ${index === 0})">
               ${pasteIconBtn(p.id, 'link')}
             </div>
           </div>
-          <div class="fieldCell">
+          <div class="fieldCell" data-label="اسم المنتج">
             <div class="inputWithPaste">
-              <input class="input" type="text" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="render()">
+              <input class="input" type="text" aria-label="اسم المنتج" placeholder="مثال: حذاء Nike Air Max" value="${escapeHtml(p.name)}" oninput="updateProduct('${p.id}', 'name', this.value, false)" onblur="renderAfterBlur('${p.id}', ${index === 0})">
               ${pasteIconBtn(p.id, 'name')}
             </div>
           </div>
-          <div class="fieldCell">
-            <select onchange="updateProduct('${p.id}', 'productType', this.value)">
+          <div class="fieldCell" data-label="نوع المنتج">
+            <select aria-label="نوع المنتج" onchange="updateProduct('${p.id}', 'productType', this.value)">
               <option value="">-- اختر --</option>
               ${PRODUCT_TYPES.map(t => `<option value="${t}" ${p.productType === t ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
@@ -6051,12 +6525,12 @@
             </div>
             <div class="fieldCell">
               ${fieldLabel('سعر الصرف')}
-              <input class="input" type="number" inputmode="decimal" step="0.01" value="${escapeHtml(p.exchangeRate)}" oninput="updateProduct('${p.id}', 'exchangeRate', this.value, false)" onblur="render()">
+              <input class="input" type="number" inputmode="decimal" min="0.01" step="0.01" value="${escapeHtml(p.exchangeRate)}" oninput="updateProduct('${p.id}', 'exchangeRate', this.value, false)" onblur="renderAfterBlur()">
             </div>
             ${isIndirect ? `
               <div class="fieldCell">
                 ${fieldLabel('سعر الشحن المحلي')}
-                <input class="input" type="number" inputmode="decimal" placeholder="مجاني" value="${escapeHtml(p.localShippingCost)}" oninput="updateProduct('${p.id}', 'localShippingCost', this.value, false)" onblur="render()">
+                <input class="input" type="number" inputmode="decimal" min="0" step="0.01" placeholder="مجاني" value="${escapeHtml(p.localShippingCost)}" oninput="updateProduct('${p.id}', 'localShippingCost', this.value, false)" onblur="renderAfterBlur()">
               </div>
             ` : ''}
           </div>
@@ -6115,6 +6589,8 @@
         const isDirect = p.shippingType === 'direct';
         const isIndirect = p.shippingType === 'indirect';
         const savedMatch = findSavedWeightMatch(p.link, p.name);
+        const weightEstimate = weightEstimateState(p);
+        const estimateLoading = aiLoadingProductId === p.id;
         const quantity = Math.max(1, parseFloat(p.quantity) || 1);
         const quantityWeightSuggestion = (parseFloat(p.weight) || 0) * quantity;
         const showQuantityWeightSuggestion = p.weight && quantity > 1 && !p.quantityWeightApplied;
@@ -6158,18 +6634,21 @@
             <div class="${stageAfterShippingClass}" data-stage="after-shipping">
               ${isDirect ? `
                 <div class="field weightSection">
-                  <label class="label">سعر الشحن المباشر</label>
-                  <div class="row3">
+                  <label class="label">إعداد الشحن المباشر</label>
+                  <div class="row3 directShippingRow">
                     <div>
-                      <input class="input" type="number" inputmode="decimal" placeholder="0.00" value="${escapeHtml(p.directShippingCost)}" oninput="updateProduct('${p.id}', 'directShippingCost', this.value, false)" onblur="render()">
+                      <label class="label" for="direct-shipping-cost-${p.id}">المبلغ</label>
+                      <input id="direct-shipping-cost-${p.id}" class="input" type="number" inputmode="decimal" min="0" step="0.01" aria-label="مبلغ الشحن المباشر" placeholder="0.00" value="${escapeHtml(p.directShippingCost)}" oninput="updateProduct('${p.id}', 'directShippingCost', this.value, false)" onblur="renderAfterBlur()">
                     </div>
                     <div>
-                      <select onchange="updateProduct('${p.id}', 'directShippingCurrency', this.value)">
+                      <label class="label" for="direct-shipping-currency-${p.id}">العملة</label>
+                      <select id="direct-shipping-currency-${p.id}" aria-label="عملة الشحن المباشر" onchange="updateProduct('${p.id}', 'directShippingCurrency', this.value)">
                         ${CURRENCIES.map(c => `<option value="${c.code}" ${p.directShippingCurrency === c.code ? 'selected' : ''}>${c.code}</option>`).join('')}
                       </select>
                     </div>
                     <div>
-                      <input class="input" type="number" inputmode="decimal" step="0.01" value="${escapeHtml(p.directShippingRate)}" oninput="updateProduct('${p.id}', 'directShippingRate', this.value, false)" onblur="render()">
+                      <label class="label" for="direct-shipping-rate-${p.id}">سعر الصرف إلى ر.س</label>
+                      <input id="direct-shipping-rate-${p.id}" class="input" type="number" inputmode="decimal" min="0.01" step="0.01" aria-label="سعر صرف الشحن إلى الريال السعودي" value="${escapeHtml(p.directShippingRate)}" oninput="updateProduct('${p.id}', 'directShippingRate', this.value, false)" onblur="renderAfterBlur()">
                     </div>
                   </div>
                   ${p.directShippingCost ? `<div class="weightConvert">≈ ${fmt((parseFloat(p.directShippingCost) || 0) * (parseFloat(p.directShippingRate) || 0))} ر.س شحن</div>` : ''}
@@ -6177,61 +6656,62 @@
               ` : `
                 ${renderShippingCountry()}
                 <div class="field weightSection">
-                  <div class="weightSourceRow">
+                  <div class="weightSourceRow" role="group" aria-label="بيانات وزن المنتج">
                     <div>
-                      <label class="label">سجل الأوزان المحفوظة</label>
-                      ${savedMatch ? `
-                        <div class="savedWeightInlineBox">
-                          <div class="savedWeightInlineMain">
-                            <b>${savedMatch.weight} رطل</b>
-                            <span title="${escapeHtml(savedMatch.url)}">${escapeHtml(compactUrlLabel(savedMatch.url))}</span>
+                      <div class="label">سجل الأوزان المحفوظة</div>
+                      <div class="savedWeightControls">
+                        ${savedMatch ? `
+                          <div class="savedWeightInlineBox">
+                            <div class="savedWeightInlineMain">
+                              <b>${savedMatch.weight} رطل</b>
+                              <span title="${escapeHtml(savedMatch.url)}">${escapeHtml(compactUrlLabel(savedMatch.url))}</span>
+                            </div>
+                            ${(savedMatch.weight !== p.weight || p.weightUnit !== 'lb') ? `<button class="savedWeightInlineApply" onclick="applySavedWeight('${p.id}')">استخدام</button>` : ''}
                           </div>
-                          ${(savedMatch.weight !== p.weight || p.weightUnit !== 'lb') ? `<button class="savedWeightInlineApply" onclick="applySavedWeight('${p.id}')">استخدام</button>` : ''}
-                        </div>
-                      ` : `
-                        <div class="savedWeightInlineBox empty">${(!p.name || !p.link) ? 'اكتب اسم ورابط المنتج لعرض السجل' : 'لا يوجد وزن محفوظ لهذا المنتج'}</div>
-                      `}
-                    </div>
-                    <div>
-                      <label class="label">الوزن الفعلي</label>
-                      <div class="weightRow">
-                        <div>
-                          <input class="input" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${escapeHtml(p.weight)}" oninput="updateProduct('${p.id}', 'weight', this.value, false)" onblur="render()">
-                        </div>
-                        <div>
-                          <select onchange="updateProduct('${p.id}', 'weightUnit', this.value)">
-                            <option value="lb" ${p.weightUnit === 'lb' ? 'selected' : ''}>رطل</option>
-                            <option value="kg" ${p.weightUnit === 'kg' ? 'selected' : ''}>كجم</option>
-                          </select>
-                        </div>
+                        ` : `
+                          <div class="savedWeightInlineBox empty">${(!p.name || !p.link) ? 'اكتب اسم ورابط المنتج لعرض السجل' : 'لا يوجد وزن محفوظ لهذا المنتج'}</div>
+                        `}
+                        <button class="smallBtn savedWeightSaveBtn" type="button" onclick="autoSaveWeightFromProduct('${p.id}')" title="حفظ الوزن في سجل الأوزان المحفوظة">
+                          <span class="iconWrap">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                          </span>
+                          حفظ الآن
+                        </button>
                       </div>
                     </div>
                     <div>
-                      <label class="label">مصدر الوزن</label>
-                      <input class="input" type="text" placeholder="رابط المصدر أو ملاحظة مختصرة" value="${escapeHtml(p.weightSource)}" oninput="updateProduct('${p.id}', 'weightSource', this.value, false)" onblur="render()">
+                      <label class="label" for="product-weight-${p.id}">الوزن</label>
+                      <input id="product-weight-${p.id}" class="input" type="number" inputmode="decimal" min="0.01" step="0.01" aria-label="وزن المنتج" placeholder="0.00" value="${escapeHtml(p.weight)}" oninput="updateProduct('${p.id}', 'weight', this.value, false)" onblur="renderAfterBlur('${p.id}', true)">
                     </div>
-                  </div>
-
-                  <div class="weightActionsRow">
-                    ${(!savedMatch && p.name) ? `
-                      <button class="smallBtn gold ${aiLoadingProductId === p.id ? 'loading' : ''}" onclick="estimateWeight('${p.id}')">
+                    <div>
+                      <label class="label" for="product-weight-unit-${p.id}">الوحدة</label>
+                      <select id="product-weight-unit-${p.id}" aria-label="وحدة الوزن" onchange="updateProduct('${p.id}', 'weightUnit', this.value); autoSaveWeightFromProduct('${p.id}')">
+                        <option value="lb" ${p.weightUnit === 'lb' ? 'selected' : ''}>رطل</option>
+                        <option value="kg" ${p.weightUnit === 'kg' ? 'selected' : ''}>كجم</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="label" for="product-weight-source-${p.id}">مصدر الوزن</label>
+                      <input id="product-weight-source-${p.id}" class="input" type="text" aria-label="مصدر الوزن" placeholder="رابط أو ملاحظة مختصرة" value="${escapeHtml(p.weightSource)}" oninput="updateProduct('${p.id}', 'weightSource', this.value, false)" onblur="renderAfterBlur()">
+                    </div>
+                    <div class="weightEstimateAction">
+                      <div class="weightEstimateHint" role="status" aria-live="polite">${estimateLoading ? 'جارٍ تجهيز طلب التقدير…' : weightEstimate.hint}</div>
+                      <button class="smallBtn gold ${estimateLoading ? 'loading' : ''}" type="button" onclick="estimateWeight('${p.id}')" ${!weightEstimate.ready || estimateLoading ? 'disabled' : ''} aria-disabled="${!weightEstimate.ready || estimateLoading}" title="${escapeHtml(estimateLoading ? 'جارٍ تجهيز طلب التقدير.' : weightEstimate.hint)}">
                         <span class="iconWrap">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
                         </span>
                         تقدير الوزن
                       </button>
-                    ` : `<span class="weightActionSpacer"></span>`}
+                    </div>
+                  </div>
+
+                  <div class="weightActionsRow">
                     <div class="weightMiddleActionStack">
                       ${p.weight ? `<div class="weightConvert">${p.weightUnit === 'lb' ? `≈ ${fmt(getWeightKg(p.weight, 'lb'))} كجم` : `≈ ${fmt(getWeightLb(p.weight, 'kg'))} رطل`}</div>` : `<span class="weightActionSpacer"></span>`}
                       ${p.weight && showQuantityWeightSuggestion ? `<button class="weightQuantityHint" onclick="applyQuantityWeightSuggestion('${p.id}')">اقتراح وزن الكمية: <b>${fmt(quantityWeightSuggestion)} ${p.weightUnit === 'lb' ? 'رطل' : 'كجم'}</b></button>` : ''}
                     </div>
-                    <button class="smallBtn" onclick="saveWeightFromProduct('${p.id}')">
-                      <span class="iconWrap">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                      </span>
-                      حفظ الوزن
-                    </button>
                   </div>
+                  <div class="weightSaveStatus ${autoSavingWeights.has(p.id) ? 'is-loading' : ''}" role="status" aria-live="polite">${autoSavingWeights.has(p.id) ? 'جارٍ حفظ الوزن…' : 'يُحفظ الوزن تلقائيًا عند اكتمال الاسم والرابط والوزن.'}</div>
 
                   ${aiLoadingProductId === p.id ? `
                     <div class="aiSkeleton">
@@ -6443,7 +6923,7 @@
               return `
                 <button class="carrierItem ${isActive ? 'active' : ''} ${isBest ? 'bestCarrier' : ''}" onclick="updateProduct('${p.id}', 'carrierId', '${c.id}')">
                   <div class="carrierLabel">
-                    <b><span class="carrierRank">${rankLabel}</span><span class="carrierName">${c.label}</span></b>
+                    <b>${isBest ? '<svg class="carrierStarIco" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l2.8 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.5 5.9 20.8l1.6-6.8L2.3 9.4l6.9-.6z"/></svg>' : ''}<span class="carrierRank">${rankLabel}</span><span class="carrierName">${c.label}</span></b>
                     <small><span class="carrierEta">${s.deliveryDays || c.time}</span> · وزن الفاتورة: ${s.lb} رطل${s.capped ? ' (محدود)' : ''}</small>
                   </div>
                   ${feeAmount > 0 ? `
@@ -6817,7 +7297,45 @@
       `).join('');
     }
 
+    let pendingCalculatorFocusKey = '';
+
+    function calculatorFocusKey(el) {
+      if (!el || !el.matches('input, select, textarea')) return '';
+      const productId = el.closest('[data-product-id]')?.dataset.productId || '';
+      const cell = el.closest('.fieldCell');
+      const label = el.getAttribute('aria-label')
+        || cell?.dataset.label
+        || cell?.querySelector('.label')?.textContent.trim()
+        || el.closest('.field')?.querySelector('.label')?.textContent.trim()
+        || '';
+      const group = el.closest('.productMainRow, .singleSiteProductsRow, .productSupportRow, .weightRow, .row3, .weightSourceRow')
+        || el.parentElement;
+      const peers = group ? Array.from(group.querySelectorAll('input, select, textarea')) : [];
+      return [productId, label, el.tagName.toLowerCase(), el.type || '', peers.indexOf(el)].join('|');
+    }
+
+    document.addEventListener('blur', event => {
+      if (!event.target?.closest('#calculatorPage')) return;
+      const next = event.relatedTarget;
+      pendingCalculatorFocusKey = next instanceof Element && next.closest('#calculatorPage') && next.matches('input, select, textarea')
+        ? calculatorFocusKey(next)
+        : '';
+    }, true);
+
+    function renderAfterBlur(productId = '', saveWeight = false) {
+      window.setTimeout(() => {
+        render();
+        if (saveWeight && productId) autoSaveWeightFromProduct(productId);
+      }, 0);
+    }
+    window.renderAfterBlur = renderAfterBlur;
+
     function render() {
+      const active = document.activeElement;
+      const focusKey = active?.closest('#calculatorPage')
+        ? calculatorFocusKey(active)
+        : pendingCalculatorFocusKey;
+      pendingCalculatorFocusKey = '';
       renderProducts();
       renderCombinedShipment();
       renderSummary();
@@ -6832,8 +7350,19 @@
       if (savedCountPill) savedCountPill.textContent = state.savedWeights.length;
       const combinedBtn = document.getElementById('addProductCombined');
       const independentBtn = document.getElementById('addProductIndependent');
-      if (combinedBtn) combinedBtn.classList.toggle('active', isMultiSiteOrder() && state.orderShippingMode === 'myusCombined');
+      if (combinedBtn) {
+        const combinedUnavailable = getSelectedCountry() !== 'US';
+        combinedBtn.disabled = combinedUnavailable;
+        combinedBtn.setAttribute('aria-disabled', String(combinedUnavailable));
+        combinedBtn.title = combinedUnavailable ? 'الشحنة المجمعة MyUS متاحة للشحن من الولايات المتحدة فقط.' : '';
+        combinedBtn.classList.toggle('active', isMultiSiteOrder() && state.orderShippingMode === 'myusCombined');
+      }
       if (independentBtn) independentBtn.classList.toggle('active', isMultiSiteOrder() && state.orderShippingMode !== 'myusCombined');
+      if (focusKey) {
+        const replacement = Array.from(document.querySelectorAll('#calculatorPage input, #calculatorPage select, #calculatorPage textarea'))
+          .find(el => calculatorFocusKey(el) === focusKey && !el.disabled && el.getClientRects().length);
+        replacement?.focus({ preventScroll: true });
+      }
     }
 
     function renderOrderTypeGate() {
@@ -6940,8 +7469,59 @@
     function orderNumberAuto() {
       const d = new Date();
       const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-      const count = (state.orders || []).length + 1;
-      return `ORD-${stamp}-${String(count).padStart(3, '0')}`;
+      const prefix = `ORD-${stamp}-`;
+      const used = new Set((state.orders || []).map(order => String(order.orderNumber || '')));
+      let maxSequence = 0;
+      used.forEach(number => {
+        if (!number.startsWith(prefix)) return;
+        const sequence = Number(number.slice(prefix.length));
+        if (Number.isInteger(sequence) && sequence > maxSequence) maxSequence = sequence;
+      });
+      const sequenceKey = `order-number-sequence-${stamp}`;
+      let storedSequence = 0;
+      try { storedSequence = Number(localStorage.getItem(sequenceKey)) || 0; } catch (_) {}
+      let sequence = Math.max(maxSequence, storedSequence) + 1;
+      let candidate = `${prefix}${String(sequence).padStart(3, '0')}`;
+      while (used.has(candidate)) {
+        sequence += 1;
+        candidate = `${prefix}${String(sequence).padStart(3, '0')}`;
+      }
+      try { localStorage.setItem(sequenceKey, String(sequence)); } catch (_) {}
+      return candidate;
+    }
+
+    function safeOrderUrl(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return '';
+      try {
+        const parsed = new URL(raw);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : '';
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function validateOrderFormLinks() {
+      const fields = document.querySelectorAll(
+        '#orderProductRowsContainer [name="oProductLink"], #shipmentsContainer [name="shipUrl"]'
+      );
+      for (const field of fields) {
+        field.setCustomValidity('');
+        const value = field.value.trim();
+        if (!value) continue;
+        if (!safeOrderUrl(value)) {
+          field.setCustomValidity('استخدم رابطًا يبدأ بـ http:// أو https://');
+          field.reportValidity();
+          field.focus();
+          return false;
+        }
+        if (!field.checkValidity()) {
+          field.reportValidity();
+          field.focus();
+          return false;
+        }
+      }
+      return true;
     }
 
     /* ======= Dynamic Product Rows ======= */
@@ -6977,6 +7557,9 @@
           <label class="label">آخر تحديث</label>
           <input class="input ltr" name="oStatusDate" type="date" value="${escapeHtml(today)}">
         </div>
+        <div class="orderProductRowActions">
+          <button class="smallBtn" type="button" onclick="removeOrderProductRow(this)" aria-label="حذف المنتج">حذف المنتج</button>
+        </div>
       </div>`;
     }
 
@@ -6985,6 +7568,23 @@
       if (!container) return;
       const items = (Array.isArray(products) && products.length) ? products : [{}];
       container.innerHTML = items.map((p, i) => buildOrderProductRow(i, p)).join('');
+    }
+
+    function addOrderProductRow(product) {
+      renderOrderProductRows([...readOrderProductRows(), product || {}]);
+    }
+
+    function removeOrderProductRow(button) {
+      const row = button?.closest('[data-product-row]');
+      if (!row) return;
+      const products = readOrderProductRows();
+      const index = Number(row.dataset.productRow);
+      if (products.length <= 1) {
+        renderOrderProductRows([{}]);
+        return;
+      }
+      if (Number.isInteger(index) && index >= 0 && index < products.length) products.splice(index, 1);
+      renderOrderProductRows(products);
     }
 
     function readOrderProductRows() {
@@ -7040,7 +7640,7 @@
 
     /* ======= Reset / Init ======= */
     function resetOrderForm() {
-      const ids = ['editingOrderId','orderCustomer','orderCustomerTitle','orderWhatsapp'];
+      const ids = ['editingOrderId','orderCustomer','orderCustomerTitle','orderWhatsapp','orderTracking','orderCarrier'];
       ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       const pDate = document.getElementById('orderPurchaseDate');
       if (pDate) pDate.value = todayInput();
@@ -7055,29 +7655,40 @@
 
     function readOrderForm() {
       const v = id => (document.getElementById(id)?.value || '').trim();
+      const editingId = v('editingOrderId');
+      const previous = (state.orders || []).find(order => String(order.id) === String(editingId));
       const products = readOrderProductRows();
       const first = products[0] || {};
+      const formTracking = v('orderTracking');
+      const trackingNumber = previous ? formTracking : (formTracking || first.trackingNumber || '');
+      const localTracking = previous
+        ? (trackingNumber === String(previous.trackingNumber || '') ? (previous.localTracking || '') : trackingNumber)
+        : trackingNumber;
       return {
-        id: v('editingOrderId') || uid(),
+        id: editingId || uid(),
         customerName: v('orderCustomer'),
         customerShortTitle: v('orderCustomerTitle'),
-        orderNumber: orderNumberAuto(),
+        orderNumber: previous?.orderNumber || orderNumberAuto(),
         whatsappLink: v('orderWhatsapp'),
         productLink: first.link || '',
         productName: first.name || '',
         sellerOrderNumber: first.sellerOrderNumber || '',
-        trackingNumber: first.trackingNumber || '',
-        status: first.status || 'purchased',
+        trackingNumber: trackingNumber,
+        localTracking: localTracking,
+        intlTracking: previous?.intlTracking || '',
+        carrier: v('orderCarrier'),
+        status: previous ? (previous.status || 'purchased') : (first.status || 'purchased'),
         purchaseDate: v('orderPurchaseDate') || todayInput(),
-        statusUpdatedAt: first.statusUpdatedAt || todayInput(),
+        statusUpdatedAt: previous ? (previous.statusUpdatedAt || todayInput()) : (first.statusUpdatedAt || todayInput()),
         notes: currentOrderNotes.slice(),
         products: products,
         shipments: readShipments(),
-        createdAt: new Date().toISOString()
+        createdAt: previous?.createdAt || new Date().toISOString()
       };
     }
 
     async function saveOrderFromForm() {
+      if (!validateOrderFormLinks()) return;
       const order = readOrderForm();
       if (!order.customerName && !order.orderNumber) {
         toast('اكتب اسم العميل أو رقم الطلب أولاً');
@@ -7111,6 +7722,8 @@
       set('orderCustomerTitle', order.customerShortTitle);
       set('orderWhatsapp', order.whatsappLink);
       set('orderPurchaseDate', String(order.purchaseDate || todayInput()).slice(0, 10));
+      set('orderTracking', order.trackingNumber);
+      set('orderCarrier', order.carrier);
 
       const orderProducts = Array.isArray(order.products) && order.products.length
         ? order.products
@@ -7160,7 +7773,7 @@
 
       // TASK 2: derive the phone number from the stored WhatsApp link
       // (e.g. https://wa.me/966...) by keeping only the digits.
-      const phoneDigits = (order.whatsappLink || '').replace(/\D/g, '');
+      const phoneDigits = orderWhatsappPhone(order);
 
       // TASK 2: include EVERY product with its name AND url, numbered in order.
       const productBlock = products.length
@@ -7303,10 +7916,47 @@ Thank you.`;
       copyText(sellerEmailText(order), 'تم نسخ إيميل المتابعة للبائع');
     }
 
+    function normalizeWhatsappPhone(value) {
+      let raw = String(value || '').trim();
+      if (!raw) return '';
+      raw = raw.replace(/[٠-٩۰-۹]/g, digit => {
+        const code = digit.charCodeAt(0);
+        return String(code >= 0x06F0 ? code - 0x06F0 : code - 0x0660);
+      });
+
+      let numberText = raw;
+      if (/^(?:https?:\/\/)?(?:www\.)?(?:wa\.me|(?:api|web)\.whatsapp\.com)(?:\/|$)/i.test(raw)) {
+        try {
+          const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+          const host = url.hostname.toLowerCase().replace(/^www\./, '');
+          numberText = host === 'wa.me'
+            ? (url.pathname.split('/').filter(Boolean)[0] || '')
+            : (url.searchParams.get('phone') || url.searchParams.get('phone_number') || '');
+        } catch (_) {
+          return '';
+        }
+      }
+
+      let digits = numberText.replace(/\D/g, '');
+      const hasInternationalPrefix = /^\s*(?:\+|00)/.test(numberText);
+      if (digits.startsWith('00')) digits = digits.slice(2);
+      if (digits.length === 10 && digits.startsWith('05')) return `966${digits.slice(1)}`;
+      if (digits.length === 9 && digits.startsWith('5')) return `966${digits}`;
+      if (digits.length >= 8 && digits.length <= 15 && (hasInternationalPrefix || digits.startsWith('966'))) return digits;
+      return digits.length >= 8 && digits.length <= 15 ? digits : '';
+    }
+
+    function orderWhatsappPhone(order) {
+      return normalizeWhatsappPhone(order?.customerPhone)
+        || normalizeWhatsappPhone(order?.phone)
+        || normalizeWhatsappPhone(order?.whatsappLink);
+    }
+
     function openOrderWhatsapp(id) {
       const order = (state.orders || []).find(o => o.id === id);
-      if (!order?.whatsappLink) { toast('لا يوجد رابط واتساب لهذا الطلب'); return; }
-      window.open(order.whatsappLink, '_blank', 'noopener');
+      const phone = orderWhatsappPhone(order);
+      if (!phone) { toast('أدخل رقم واتساب صحيحًا للعميل أولًا'); return; }
+      window.open(`https://wa.me/${phone}`, '_blank', 'noopener');
     }
 
     function copyCustomerStatus(id) {
@@ -7363,6 +8013,10 @@ Thank you.`;
             <label class="label">رقم التتبع</label>
             <input class="input" name="shipTracking" placeholder="TRACK123" value="${escapeHtml(shipment?.trackingNumber || '')}">
           </div>
+          <div>
+            <label class="label">الناقل</label>
+            <input class="input" name="shipCarrier" placeholder="مثال: DHL" value="${escapeHtml(shipment?.carrier || '')}">
+          </div>
           <div class="wide2">
             <label class="label">الحالة</label>
             <select name="shipStatus">${statusOpts}</select>
@@ -7393,8 +8047,9 @@ Thank you.`;
         shippingUrl: (box.querySelector('[name="shipUrl"]')?.value || '').trim(),
         orderNumber: (box.querySelector('[name="shipOrderNumber"]')?.value || '').trim(),
         trackingNumber: (box.querySelector('[name="shipTracking"]')?.value || '').trim(),
+        carrier: (box.querySelector('[name="shipCarrier"]')?.value || '').trim(),
         status: box.querySelector('[name="shipStatus"]')?.value || 'purchased',
-      })).filter(s => s.productName || s.shippingUrl || s.trackingNumber);
+      })).filter(s => s.productName || s.shippingUrl || s.orderNumber || s.trackingNumber || s.carrier);
     }
 
     function renderOrdersStatusOptions() {
@@ -7405,15 +8060,95 @@ Thank you.`;
       select.value = current;
     }
 
+    let selectedOrderStatusFilter = 'all';
+    const expandedOrderIds = new Set();
+
+    function rememberOrderDetails(details) {
+      const id = details?.closest('[data-order-id]')?.dataset.orderId;
+      if (!id) return;
+      if (details.open) expandedOrderIds.add(id);
+      else expandedOrderIds.delete(id);
+    }
+
+    function setOrderStatusFilter(status) {
+      selectedOrderStatusFilter = ORDER_STATUSES.some(item => item.id === status) ? status : 'all';
+      renderOrders();
+    }
+
+    function orderNeedsAttention(order) {
+      return !!orderAlertInfo(order) || !!order?.needsAttention || !!order?.sellerFollowup;
+    }
+
+    function orderNewestTimestamp(order) {
+      const value = order?.createdAt || order?.statusUpdatedAt || order?.purchaseDate;
+      const timestamp = value ? new Date(value).getTime() : 0;
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    }
+
+    function orderWaitLabel(order) {
+      const date = order?.statusUpdatedAt || order?.purchaseDate || order?.createdAt;
+      const days = calendarDaysSince(date || todayInput());
+      if (days === 0) return 'اليوم';
+      if (days === 1) return 'منذ يوم';
+      if (days === 2) return 'منذ يومين';
+      return `منذ ${days} أيام`;
+    }
+
+    function orderSearchHaystack(order) {
+      const notesText = Array.isArray(order.notes) ? order.notes.map(note => note?.text || '').join(' ') : String(order.notes || '');
+      const products = orderProductList(order);
+      const shipments = Array.isArray(order.shipments) ? order.shipments : [];
+      const values = [
+        order.customerName, order.customerPhone, order.phone, order.whatsappLink,
+        order.customerShortTitle, order.orderNumber, order.sellerOrderNumber,
+        order.carrier, order.trackingNumber, order.localTracking, order.intlTracking, notesText,
+        ...products.flatMap(product => [product?.name, product?.link, product?.trackingNumber, product?.sellerOrderNumber]),
+        ...shipments.flatMap(shipment => [shipment?.productName, shipment?.trackingNumber, shipment?.orderNumber, shipment?.shippingUrl, shipment?.carrier]),
+      ];
+      return values.map(value => String(value || '').toLocaleLowerCase()).join(' ');
+    }
+
+    function openOrderStatusWhatsapp(button) {
+      const id = button?.closest('[data-order-id]')?.dataset.orderId;
+      const order = (state.orders || []).find(item => item.id === id);
+      if (!order) return;
+      const phone = orderWhatsappPhone(order);
+      if (!phone) { toast('أدخل رقم واتساب صحيحًا للعميل أولًا'); return; }
+      const customer = String(order.customerName || '').trim();
+      const message = `السلام عليكم${customer ? ` ${customer}` : ''}، تحديث طلبك: ${statusLabel(order.status)}${order.orderNumber ? ` (${order.orderNumber})` : ''}.`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    }
+
+    async function saveOrderTracking(button) {
+      const card = button?.closest('[data-order-id]');
+      const id = card?.dataset.orderId;
+      const order = (state.orders || []).find(item => item.id === id);
+      if (!order || !card) return;
+      const trackingNumber = (card.querySelector('[data-order-tracking]')?.value || '').trim();
+      const carrier = (card.querySelector('[data-order-carrier]')?.value || '').trim();
+      const updated = { ...order, trackingNumber, localTracking: trackingNumber, carrier, statusUpdatedAt: todayInput() };
+      try {
+        await updateOrder(updated);
+      } catch (err) {
+        console.error(err);
+        toast('فشل حفظ بيانات التتبع في قاعدة البيانات');
+        return;
+      }
+      await loadOrders();
+      renderOrders();
+      toast('تم حفظ بيانات التتبع');
+    }
+
     function renderOrders() {
       const board = document.getElementById('ordersKanban');
       if (!board) return;
       renderOrdersStatusOptions();
       const orders = Array.isArray(state.orders) ? state.orders : [];
       const search = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
-      const notesText = o => Array.isArray(o.notes) ? o.notes.map(n => n.text || '').join(' ') : String(o.notes || '');
-      const filtered = !search ? orders : orders.filter(o => [o.customerName, o.customerShortTitle, o.orderNumber, o.sellerOrderNumber, o.localTracking, o.intlTracking, notesText(o)]
-        .some(v => String(v || '').toLowerCase().includes(search)));
+      const searchFiltered = !search ? orders : orders.filter(order => orderSearchHaystack(order).includes(search));
+      const filtered = selectedOrderStatusFilter === 'all'
+        ? searchFiltered
+        : searchFiltered.filter(order => order.status === selectedOrderStatusFilter);
 
       const alerts = orders.map(orderAlertInfo).filter(Boolean);
       const dangerCount = alerts.filter(a => a.level === 'danger').length;
@@ -7428,24 +8163,54 @@ Thank you.`;
       const badge = document.getElementById('ordersCountBadge');
       if (badge) badge.textContent = orders.length;
 
-      board.innerHTML = ORDER_STATUSES.map(status => {
-        const items = filtered.filter(o => o.status === status.id);
+      const activeCount = orders.filter(order => order.status !== 'delivered').length;
+      const shippingCount = orders.filter(order => ['to_mailbox', 'in_mailbox', 'international'].includes(order.status)).length;
+      const followupCount = orders.filter(order => orderNeedsAttention(order)).length;
+      const counters = document.getElementById('ordersCounters');
+      if (counters) {
+        counters.innerHTML = `
+          <div class="ordersCounter"><span>طلبات نشطة</span><b>${activeCount}</b></div>
+          <div class="ordersCounter"><span>قيد الشحن</span><b>${shippingCount}</b></div>
+          <div class="ordersCounter"><span>تحتاج متابعة</span><b>${followupCount}</b></div>
+        `;
+      }
+
+      const filters = document.getElementById('orderStatusFilters');
+      if (filters) {
+        filters.innerHTML = [
+          `<button type="button" class="orderFilterChip" aria-pressed="${selectedOrderStatusFilter === 'all'}" onclick="setOrderStatusFilter('all')">الكل <span>${searchFiltered.length}</span></button>`,
+          ...ORDER_STATUSES.map(status => {
+            const count = searchFiltered.filter(order => order.status === status.id).length;
+            return `<button type="button" class="orderFilterChip" aria-pressed="${selectedOrderStatusFilter === status.id}" onclick="setOrderStatusFilter('${status.id}')">${status.label} <span>${count}</span></button>`;
+          }),
+        ].join('');
+      }
+
+      board.classList.toggle('orderStatusFiltered', selectedOrderStatusFilter !== 'all');
+      const visibleStatuses = selectedOrderStatusFilter === 'all'
+        ? ORDER_STATUSES
+        : ORDER_STATUSES.filter(status => status.id === selectedOrderStatusFilter);
+      board.innerHTML = visibleStatuses.map(status => {
+        const items = filtered.filter(order => order.status === status.id).sort((a, b) => {
+          const attentionDifference = Number(orderNeedsAttention(b)) - Number(orderNeedsAttention(a));
+          return attentionDifference || orderNewestTimestamp(b) - orderNewestTimestamp(a);
+        });
         return `
           <section class="kanbanColumn">
             <div class="kanbanHead"><span>${status.label}</span><span class="badge">${items.length}</span></div>
             <div class="kanbanCards">
-              ${items.length ? items.map(renderOrderCard).join('') : `<div class="orderEmpty">لا توجد طلبات هنا</div>`}
+              ${items.length ? items.map(renderOrderCard).join('') : `<div class="orderEmpty">${search ? 'لا توجد نتائج مطابقة' : 'لا توجد طلبات هنا'}</div>`}
             </div>
           </section>
         `;
       }).join('');
     }
-            function renderOrderCard(order) {
+    function renderOrderCard(order) {
       const alert = orderAlertInfo(order);
-      const cardClass = alert?.level === 'danger' ? 'sellerFollowup' : alert ? 'needsAttention' : '';
+      const cardClass = order.sellerFollowup || alert?.level === 'danger' ? 'sellerFollowup' : order.needsAttention || alert ? 'needsAttention' : '';
       const statusOptions = ORDER_STATUSES.map(s => `<option value="${s.id}" ${order.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('');
       const shippingCustomerHtml = Number(order.indirectShippingCustomer || 0) > 0
-        ? `<span><b>سعر الشحن</b>${fmtMoney(order.indirectShippingCustomer)} ر.س</span>`
+        ? `<span><b>إجمالي الشحن</b> ${fmtMoney(order.indirectShippingCustomer)} ر.س</span>`
         : '';
       // Each product keeps its OWN status, independent of order.status (which
       // is what drives the Kanban column). Products are listed un-deduped and
@@ -7462,8 +8227,9 @@ Thank you.`;
             const prodName = String(prod.name || '').trim();
             const label = prodName || compactUrlLabel(prod.link) || 'منتج';
             const tooltip = prodName || prod.link || '';
-            const linkHtml = prod.link
-              ? `<a href="${escapeHtml(prod.link)}" target="_blank" rel="noopener" dir="auto" title="${escapeHtml(tooltip)}">${escapeHtml(label)}</a>`
+            const safeLink = safeOrderUrl(prod.link);
+            const linkHtml = safeLink
+              ? `<a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener noreferrer" dir="auto" title="${escapeHtml(tooltip)}">${escapeHtml(label)}</a>`
               : `<span class="shipNoLink" dir="auto" title="${escapeHtml(tooltip)}">${escapeHtml(label)}</span>`;
             return `
               <div class="shipmentPill">
@@ -7477,32 +8243,47 @@ Thank you.`;
         </div>
       ` : '';
       const orderShipments = Array.isArray(order.shipments) ? order.shipments : [];
+      const trackingFromChildren = orderProductItems.find(product => product?.trackingNumber)?.trackingNumber
+        || orderShipments.find(shipment => shipment?.trackingNumber)?.trackingNumber || '';
+      const trackingValue = order.trackingNumber || order.localTracking || order.intlTracking || trackingFromChildren;
       const shipmentsKanbanHtml = orderShipments.length ? `
         <div class="shipmentPillsRow">
-          ${orderShipments.map(s => `
-            <div class="shipmentPill">
-              ${s.shippingUrl
-                ? `<a href="${escapeHtml(s.shippingUrl)}" target="_blank" rel="noopener">${escapeHtml(s.productName || 'رابط الشحن')}</a>`
-                : `<span class="shipNoLink">${escapeHtml(s.productName || 'شحنة')}</span>`}
-              <select class="shipStatusDropdown" onchange="updateShipmentStatus('${order.id}', '${s.id}', this.value)">
-                ${ORDER_STATUSES.map(st => `<option value="${st.id}" ${(s.status || 'purchased') === st.id ? 'selected' : ''}>${st.label}</option>`).join('')}
-              </select>
-            </div>
-          `).join('')}
+          ${orderShipments.map(s => {
+            const safeShippingUrl = safeOrderUrl(s.shippingUrl);
+            return `
+              <div class="shipmentPill">
+                ${safeShippingUrl
+                  ? `<a href="${escapeHtml(safeShippingUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.productName || 'رابط الشحن')}</a>`
+                  : `<span class="shipNoLink">${escapeHtml(s.productName || 'شحنة')}</span>`}
+                ${s.carrier ? `<small style="font-size:10px;color:var(--muted2)">${escapeHtml(s.carrier)}</small>` : ''}
+                <select class="shipStatusDropdown" onchange="updateShipmentStatus('${order.id}', '${s.id}', this.value)">
+                  ${ORDER_STATUSES.map(st => `<option value="${st.id}" ${(s.status || 'purchased') === st.id ? 'selected' : ''}>${st.label}</option>`).join('')}
+                </select>
+              </div>
+            `;
+          }).join('')}
         </div>
       ` : '';
       return `
-        <article class="orderCard ${cardClass}">
-          <div class="orderCustomerTitle">
-            👤 ${escapeHtml(order.customerName) || 'بدون اسم'}
+        <article class="orderCard ${cardClass}" data-order-id="${escapeHtml(order.id)}">
+          <div class="orderCardSummary">
+            <div class="orderCardSummaryTop">
+              <div class="orderCardSummaryIdentity">
+                <div class="orderCustomerTitle">${escapeHtml(order.customerName) || 'بدون اسم'}</div>
+                <span class="orderCardNumber">${escapeHtml(order.orderNumber || '—')}</span>
+              </div>
+              <span class="orderCardStatusBadge">${escapeHtml(statusLabel(order.status))}</span>
+            </div>
+            <div class="orderCardSummaryMeta">
+              <span>${shippingCustomerHtml || '<b>إجمالي الشحن</b> غير محدد'}</span>
+              <span class="orderLastUpdatePill" title="${escapeHtml(humanLastUpdateLabel(order.statusUpdatedAt || order.purchaseDate || order.createdAt))}">⏱ ${escapeHtml(orderWaitLabel(order))}</span>
+            </div>
+            <div class="orderCardQuickActions">
+              <button class="smallBtn" type="button" onclick="openOrderStatusWhatsapp(this)">واتساب الحالة</button>
+            </div>
           </div>
-          <div class="orderLastUpdatePill">
-            ⏱ ${humanLastUpdateLabel(order.statusUpdatedAt || order.purchaseDate)}
-          </div>
-          ${productUrlsHtml}
-          ${shipmentsKanbanHtml}
-          <details class="orderCardDetails">
-            <summary>عرض البطاقة كاملة</summary>
+          <details class="orderCardDetails" ontoggle="rememberOrderDetails(this)" ${expandedOrderIds.has(String(order.id)) ? 'open' : ''}>
+            <summary>تفاصيل الطلب</summary>
 
             ${alert ? `<div class="orderAlert ${alert.level === 'danger' ? 'danger' : ''}">${escapeHtml(alert.text)}</div>` : ''}
 
@@ -7512,6 +8293,21 @@ Thank you.`;
               <span><b>آخر تحديث</b>${escapeHtml(String(order.statusUpdatedAt || '').slice(0, 10)) || '—'}</span>
               ${shippingCustomerHtml}
             </div>
+
+            <div class="inlineOrderTracking">
+              <div>
+                <label class="label">رقم التتبع</label>
+                <input class="input ltr" type="text" data-order-tracking value="${escapeHtml(trackingValue)}" placeholder="أدخل رقم التتبع">
+              </div>
+              <div>
+                <label class="label">الناقل</label>
+                <input class="input" type="text" data-order-carrier value="${escapeHtml(order.carrier || '')}" placeholder="اسم الناقل">
+              </div>
+              <button class="smallBtn" type="button" onclick="saveOrderTracking(this)">حفظ التتبع</button>
+            </div>
+
+            ${productUrlsHtml}
+            ${shipmentsKanbanHtml}
 
             ${(() => {
               if (Array.isArray(order.notes) && order.notes.length) {
@@ -7530,7 +8326,7 @@ Thank you.`;
 
             <div class="orderCardActions">
               <button class="smallBtn" type="button" onclick="copyOrder('${order.id}')">نسخ الطلب</button>
-              <button class="smallBtn" type="button" onclick="openOrderWhatsapp('${order.id}')">فتح واتساب</button>
+              <button class="smallBtn" type="button" onclick="openOrderStatusWhatsapp(this)">واتساب الحالة</button>
               <button class="smallBtn" onclick="refreshOrderUpdate('${order.id}')">تحديث اليوم</button>
               <button class="smallBtn" onclick="editOrder('${order.id}')">تعديل</button>
               <button class="smallBtn" onclick="copyCustomerStatus('${order.id}')">إرسال رابط الشحن للعميل</button>
@@ -7553,6 +8349,7 @@ Thank you.`;
       if (calcBtn) calcBtn.classList.toggle('active', !isOrders);
       if (ordersBtn) ordersBtn.classList.toggle('active', isOrders);
       if (isOrders) renderOrders();
+      window.dispatchEvent(new Event('wss:pagechange'));
     }
 
 
@@ -7740,6 +8537,10 @@ Thank you.`;
     }
 
     function addProductWithMode(mode) {
+      if (mode === 'myusCombined' && getSelectedCountry() !== 'US') {
+        toast('الشحنة المجمعة MyUS متاحة للشحن من الولايات المتحدة فقط.');
+        return;
+      }
       state.orderType = 'multiSite';
       state.orderShippingMode = mode === 'myusCombined' ? 'myusCombined' : 'independent';
       const item = productTemplate();
@@ -7779,6 +8580,10 @@ Thank you.`;
     if (resetOrderBtn) resetOrderBtn.addEventListener('click', resetOrderForm);
     const fillOrderFromCalcBtn = document.getElementById('fillOrderFromCalcBtn');
     if (fillOrderFromCalcBtn) fillOrderFromCalcBtn.addEventListener('click', fillOrderFromCalculator);
+    const addOrderProductBtn = document.getElementById('addOrderProductBtn');
+    if (addOrderProductBtn) addOrderProductBtn.addEventListener('click', () => addOrderProductRow({}));
+    const addShipmentBtn = document.getElementById('addShipmentBtn');
+    if (addShipmentBtn) addShipmentBtn.addEventListener('click', () => addShipmentBox({}));
     const addNoteBtn = document.getElementById('addNoteBtn');
     if (addNoteBtn) addNoteBtn.addEventListener('click', addOrderNote);
     const orderNoteInput = document.getElementById('orderNoteInput');
@@ -7867,6 +8672,7 @@ Thank you.`;
     window.estimateWeight = estimateWeight;
     window.copyTypePrompt = copyTypePrompt;
     window.saveWeightFromProduct = saveWeightFromProduct;
+    window.autoSaveWeightFromProduct = autoSaveWeightFromProduct;
     window.deleteSavedWeight = deleteSavedWeight;
     window.applySavedWeight = applySavedWeight;
     window.applyQuantityWeightSuggestion = applyQuantityWeightSuggestion;
@@ -8117,5 +8923,149 @@ console.log("INIT DONE");
 
 </script>
 
+<script>
+  (function () {
+    function $(s) { return document.querySelector(s); }
+    function num(t) { var n = parseFloat(String(t || '').replace(/[^0-9.]/g, '')); return isNaN(n) ? 0 : n; }
+    function device() {
+      var mobile = window.matchMedia ? window.matchMedia('(max-width: 1000px)').matches : window.innerWidth <= 1000;
+      document.documentElement.classList.toggle('wss-mobile', !!mobile);
+    }
+    function buildProgress(labels) {
+      var bar = $('#stepProgress'); if (!bar) return;
+      labels = labels || ['المنتج', 'نوع الشحن', 'الشحن من الدولة', 'وزن المنتج', 'شركات الشحن', 'عرض سعر الطلب'];
+      var signature = labels.join('|');
+      if (bar.dataset.labels === signature && bar.children.length === labels.length) return;
+      bar.dataset.labels = signature;
+      bar.setAttribute('role', 'list');
+      bar.setAttribute('aria-label', 'خطوات حساب السعر');
+      bar.innerHTML = labels.map(function (t, i) {
+              return '<div class="spStep" role="listitem"><div class="spDot"><span class="spNum">' + (i + 1) + '</span></div><div class="spLabel">' + t + '</div></div>';
+      }).join('');
+    }
+    function calcVisible() {
+      var cp = $('#calculatorPage'); if (!cp) return true;
+      return getComputedStyle(cp).display !== 'none';
+    }
+    var wssBusy = false;
+        var wssLastStep = 0;
+            function wssScrollTo(step, directMode) {
+                      var el = null;
+                      if (directMode && step === 2) el = document.querySelector('.weightSection');
+                      else if (directMode && step === 3) el = document.querySelector('.priceSidebar');
+                      else if (step === 2) el = document.querySelector('.shipChoices');
+                      else if (step === 3) {
+                        var lb = [].slice.call(document.querySelectorAll('.label')).find(function (x) { return x.textContent.indexOf('دولة الشحن') >= 0; });
+                        el = lb ? (lb.closest('.field') || lb.parentElement) : document.querySelector('.shipChoices');
+                      } else if (step === 4) el = document.querySelector('.weightSection');
+                      else if (step === 5) el = document.querySelector('.carrierList');
+                      else if (step === 6) el = document.querySelector('.priceSidebar');
+                      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth', block: 'center' });
+                    }
+            function refresh() {
+          if (wssBusy) return; // حارس: يمنع الحلقات المتكررة
+          wssBusy = true;
+          if (!document.getElementById('stepProgress')) { wssBusy = false; return; }
+      var price = num($('#sumProductShipping') && $('#sumProductShipping').textContent);
+            var total = num($('#sumTotal') && $('#sumTotal').textContent);
+            var carriers = !!document.querySelector('.carrierItem');
+            var picked = !!document.querySelector('.carrierItem.active');
+            var sas = document.querySelectorAll('.shipBtn.active');
+                        var sasTxt = sas && sas.length ? [].slice.call(sas).map(function (b) { return b.textContent; }).join(' ') : '';
+                        var isType = /غير مباشر|مباشر/.test(sasTxt);
+                        var isDirect = /مباشر/.test(sasTxt) && !/غير/.test(sasTxt);
+                        var isCountry = /🇺🇸|🇬🇧|🇸🇬|🇩🇪/.test(sasTxt);
+            var progressLabels = isDirect
+              ? ['المنتج', 'الشحن المباشر', 'السعر النهائي']
+              : ['المنتج', 'نوع الشحن', 'الشحن من الدولة', 'وزن المنتج', 'شركات الشحن', 'عرض سعر الطلب'];
+            buildProgress(progressLabels);
+            var wv = 0;
+                        var wip = document.querySelector('.weightSection input[type=number]');
+                        if (wip) { var gv = parseFloat(wip.value); if (!isNaN(gv) && gv > 0) wv = gv; }
+            var step = 0;
+                        if (price > 0) step = 1;
+                                    if (price > 0 && isType) step = isDirect ? 2 : 2;
+                        if (price > 0 && isType && !isDirect && isCountry) step = 3;
+                                    if (price > 0 && !isDirect && wv > 0) step = 4;
+                                    if (!isDirect && carriers) step = picked ? 6 : 5;
+                                    if (price > 0 && isType && isDirect) step = 3;
+            if (wssLastStep > 0 && step > wssLastStep) wssScrollTo(step, isDirect);
+            wssLastStep = step;
+            var steps = $('#stepProgress').children;
+            for (var i = 0; i < steps.length; i++) {
+              steps[i].className = 'spStep' + ((i + 1) < step ? ' done' : ((i + 1) === step ? ' active' : ''));
+              if ((i + 1) === step) steps[i].setAttribute('aria-current', 'step');
+              else steps[i].removeAttribute('aria-current');
+            }
+      var mpb = $('#mobilePriceBar');
+      if (mpb) {
+        var show = document.documentElement.classList.contains('wss-mobile') && price > 0 && calcVisible();
+        document.documentElement.classList.toggle('wss-price-visible', show);
+        var want = show ? 'flex' : 'none';
+        if (mpb.style.display !== want) mpb.style.display = want; // لا نكتب إلا عند التغير (يمنع حلقة المراقب)
+        var label = mpb.querySelector('.mpbLabel');
+        var priceReady = isDirect ? step === 3 : step === 6;
+        var nextLabel = priceReady ? 'السعر النهائي للعميل' : 'التقدير الحالي للعميل';
+        if (label && label.textContent !== nextLabel) label.textContent = nextLabel;
+        var v = mpb.querySelector('.mpbValue');
+                if (v) { var val = (Math.ceil(total / 10) * 10) + ' ر.س'; if (v.textContent !== val) v.textContent = val; }
+              }
+              wssBusy = false;
+            }
+    function init() {
+      device();
+      var work = document.querySelector('#calculatorPage .workPanel') || document.querySelector('.appGrid') || document.body;
+            if (!document.getElementById('stepProgress')) {
+              var bar = document.createElement('div'); bar.id = 'stepProgress';
+              work.insertBefore(bar, work.firstChild);
+            }
+            buildProgress(); // بعد الإدراج حتمًا (علل سابق: كان يسبقه فيصفر الأطفال)
+      if (!document.getElementById('mobilePriceBar')) {
+        var mpb = document.createElement('div'); mpb.id = 'mobilePriceBar';
+        mpb.innerHTML = '<div class="mpbL"><span class="mpbLabel">التقدير الحالي للعميل</span><span class="mpbValue" aria-live="polite">0 ر.س</span></div><button class="mpbCta" type="button">عرض الملخص</button>';
+        mpb.querySelector('.mpbCta').addEventListener('click', function () {
+          var s = $('.priceSidebar');
+          if (s) s.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth', block: 'start' });
+        });
+        document.body.appendChild(mpb);
+      }
+      document.addEventListener('keydown', function (event) {
+        var current = event.target;
+        if (event.key !== 'Enter' || event.defaultPrevented || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+        if (!(current instanceof HTMLInputElement) || !current.closest('#calculatorPage')) return;
+        if (['hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'file'].indexOf(current.type) >= 0 || current.disabled || current.readOnly) return;
+        var fields = Array.prototype.filter.call(
+          document.querySelectorAll('#calculatorPage input:not([type="hidden"]), #calculatorPage select'),
+          function (field) { return !field.disabled && !field.readOnly && field.getClientRects().length > 0; }
+        );
+        var index = fields.indexOf(current);
+        var next = index >= 0 ? fields[index + 1] : null;
+        if (next) {
+          event.preventDefault();
+          next.focus();
+        }
+      });
+      refresh();
+      window.addEventListener('wss:pagechange', refresh);
+      window.addEventListener('resize', function () {
+        device();
+        refresh();
+      }, { passive: true });
+      var lastPrice = $('#sumProductShipping') ? $('#sumProductShipping').textContent : '';
+      new MutationObserver(function () {
+        device();
+        var p = $('#sumProductShipping');
+        if (p) {
+          if (p.textContent !== lastPrice) {
+            lastPrice = p.textContent;
+            p.classList.remove('wss-price-pulse'); void p.offsetWidth; p.classList.add('wss-price-pulse');
+          }
+        }
+        refresh();
+      }).observe(document.body, { subtree: true, childList: true, characterData: true });
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  })();
+</script>
 </body>
 </html>

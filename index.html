@@ -4463,6 +4463,17 @@
             @media (prefers-reduced-transparency: reduce) {
               #ordersPage .ordersToolbar, .ordersCounter, .kanbanColumn, .orderCard { background: var(--cardSolid, #18211d) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
             }
+            .adminAuthOverlay { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(3, 8, 6, .78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+            .adminAuthOverlay.show { display: flex; }
+            .adminAuthDialog { width: min(100%, 420px); padding: 24px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: #111a16; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
+            .adminAuthDialog h2 { margin: 0 0 8px; font-size: 20px; }
+            .adminAuthDialog p { margin: 0 0 18px; color: var(--muted, #9aa9a0); font-size: 12px; line-height: 1.8; }
+            .adminAuthDialog .input { width: 100%; margin: 6px 0 12px; direction: ltr; text-align: left; }
+            .adminAuthActions { display: flex; gap: 9px; margin-top: 16px; }
+            .adminAuthActions > * { flex: 1; }
+            #adminAuthStatus { min-height: 22px; margin: 6px 0 0; color: #f0c878; font-size: 11px; }
+            #adminLogoutBtn { margin-top: 10px; }
+            @media (prefers-reduced-transparency: reduce) { .adminAuthOverlay { background: rgba(3, 8, 6, .94); backdrop-filter: none; -webkit-backdrop-filter: none; } }
     </style>
   </head>
 <body>
@@ -4707,6 +4718,7 @@
           <div class="ordersIntroCard">
             <h2>إدارة الطلبات</h2>
             <p>هنا تسجل طلبات العملاء بعد الشراء وتتابعها كلوحة كانبان. التنبيه الأحمر يظهر إذا حالة <b>تم الشراء</b> ما صار لها تحديث خلال يومين عمل، مع تجاهل السبت والأحد. والتنبيه الأصفر يظهر إذا الحالات المتوسطة ما صار لها تحديث خلال 3 أيام.</p>
+            <button class="smallBtn" id="adminLogoutBtn" type="button">تسجيل الخروج من الإدارة</button>
           </div>
           <div class="ordersAlertSummary" id="ordersAlertSummary"></div>
         </div>
@@ -5341,15 +5353,9 @@
       // Saved weights are Supabase-backed (see loadSavedWeights(), called
       // from initApp()) -- this is just the pre-load placeholder.
       base.savedWeights = [];
-      base.orders = Array.isArray(base.orders) ? base.orders.map(item => {
-        const merged = { ...orderTemplate(), ...item };
-        if (!ORDER_STATUSES.some(s => s.id === merged.status)) merged.status = 'purchased';
-        merged.purchaseDate = merged.purchaseDate || todayInput();
-        merged.statusUpdatedAt = merged.statusUpdatedAt || merged.purchaseDate || todayInput();
-        merged.products = Array.isArray(item.products) ? item.products.map(prod => ({ name: prod.name || '', link: prod.link || '' })) : [];
-        merged.indirectShippingCustomer = Number(item.indirectShippingCustomer || 0) || 0;
-        return merged;
-      }) : [];
+      // Orders are private Supabase data. Never restore a local/legacy copy
+      // before the current authenticated admin session is verified.
+      base.orders = [];
       base.recentQuotes = Array.isArray(base.recentQuotes) ? base.recentQuotes.slice(0, 3).map(q => ({
         id: q.id || uid(),
         title: q.title || 'تسعيرة بدون اسم',
@@ -5375,6 +5381,10 @@
         }
         return merged;
       });
+      if (loaded && (Object.prototype.hasOwnProperty.call(loaded, 'orders') || Object.prototype.hasOwnProperty.call(loaded, 'savedWeights'))) {
+        const { orders: _legacyOrders, savedWeights: _legacyWeights, ...privateDataFreeState } = base;
+        try { localStorage.setItem(storageKey, JSON.stringify(privateDataFreeState)); } catch (_) { }
+      }
       return base;
     }
 
@@ -5912,6 +5922,11 @@
         return;
       }
 
+      if (!window.siteAdminAuthorized) {
+        setWeightSaveStatus(productId, 'للوصول إلى سجل الأوزان، سجّل الدخول أولًا من تبويب إدارة الطلبات.', 'error');
+        return;
+      }
+
       const weightLb = p.weightUnit === 'kg' ? getWeightLb(weight, 'kg') : weight;
       const existing = findSavedWeightMatch(url, name);
       if (existing && existing.url === url && existing.name === name && Math.abs(Number(existing.weight) - weightLb) < 0.01) {
@@ -5960,6 +5975,10 @@
       if (!isValidProductUrl(p.link)) { toast('أدخل رابطًا صحيحًا يبدأ بـ http:// أو https:// أولاً.'); return; }
       if (!p.name?.trim()) { toast('أدخل اسم المنتج أولاً'); return; }
       if (!p.weight) { toast('أدخل الوزن أولاً'); return; }
+      if (!window.siteAdminAuthorized) {
+        toast('سجّل الدخول من تبويب إدارة الطلبات أولًا للوصول إلى سجل الأوزان.');
+        return;
+      }
 
       const url = p.link.trim();
       const name = p.name.trim();
@@ -5996,6 +6015,10 @@
     function renderSavedWeightsFileStatus() {
       const el = document.getElementById('savedWeightsFileStatus');
       if (!el) return;
+      if (!window.siteAdminAuthorized) {
+        el.textContent = 'سجّل الدخول من تبويب إدارة الطلبات للوصول إلى سجل الأوزان الخاص.';
+        return;
+      }
       el.textContent = `الأوزان محفوظة في قاعدة البيانات: ${state.savedWeights.length} وزن محفوظ. يمكنك تصديرها أو استيرادها كملف Excel.`;
     }
 
@@ -8344,6 +8367,10 @@ Thank you.`;
       const calcBtn = document.getElementById('calcTabBtn');
       const ordersBtn = document.getElementById('ordersTabBtn');
       const isOrders = page === 'orders';
+      if (isOrders && !window.siteAdminAuthorized) {
+        window.openAdminLogin?.();
+        return;
+      }
       if (calc) calc.classList.toggle('hidden', isOrders);
       if (orders) orders.classList.toggle('hidden', !isOrders);
       if (calcBtn) calcBtn.classList.toggle('active', !isOrders);
@@ -8698,6 +8725,22 @@ Thank you.`;
 
 </script>
 
+<div class="adminAuthOverlay" id="adminAuthModal" role="dialog" aria-modal="true" aria-labelledby="adminAuthTitle" aria-hidden="true">
+  <form class="adminAuthDialog" id="adminLoginForm">
+    <h2 id="adminAuthTitle">دخول الإدارة</h2>
+    <p>سجّل الدخول بحسابك الإداري للوصول إلى الطلبات وسجل الأوزان المحفوظة.</p>
+    <label class="label" for="adminEmail">البريد الإلكتروني</label>
+    <input class="input" id="adminEmail" type="email" autocomplete="username" required>
+    <label class="label" for="adminPassword">كلمة المرور</label>
+    <input class="input" id="adminPassword" type="password" autocomplete="current-password" required>
+    <div id="adminAuthStatus" role="status" aria-live="polite"></div>
+    <div class="adminAuthActions">
+      <button class="btn primary" id="adminLoginSubmit" type="submit">تسجيل الدخول</button>
+      <button class="btn" id="adminLoginCancel" type="button">إلغاء</button>
+    </div>
+  </form>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -8716,6 +8759,121 @@ const db = createClient(
 // scope, only actual `window` properties.
 window.db = db;
 
+window.siteAdminAuthorized = false;
+
+function setAdminAuthStatus(message, isError = false) {
+  const status = document.getElementById('adminAuthStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.style.color = isError ? '#ff9c91' : '';
+}
+
+function openAdminLogin(message = '') {
+  const modal = document.getElementById('adminAuthModal');
+  if (!modal) return;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  setAdminAuthStatus(message);
+  setTimeout(() => document.getElementById('adminEmail')?.focus(), 0);
+}
+
+function closeAdminLogin() {
+  const modal = document.getElementById('adminAuthModal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+  const password = document.getElementById('adminPassword');
+  if (password) password.value = '';
+}
+
+async function checkCurrentUserIsAdmin() {
+  const { data, error } = await db.rpc('is_current_user_site_admin');
+  if (error) return false;
+  return data === true;
+}
+
+async function restoreSiteAdminSession() {
+  window.siteAdminAuthorized = false;
+  state.orders = [];
+  state.savedWeights = [];
+  const { data, error } = await db.auth.getSession();
+  if (error || !data?.session) return false;
+  if (!(await checkCurrentUserIsAdmin())) {
+    await db.auth.signOut();
+    return false;
+  }
+  window.siteAdminAuthorized = true;
+  await Promise.all([loadOrders(), loadSavedWeights()]);
+  return true;
+}
+
+window.openAdminLogin = openAdminLogin;
+window.restoreSiteAdminSession = restoreSiteAdminSession;
+
+document.getElementById('adminLoginForm')?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const submit = document.getElementById('adminLoginSubmit');
+  const email = document.getElementById('adminEmail').value.trim();
+  const passwordInput = document.getElementById('adminPassword');
+  const password = passwordInput.value;
+  submit.disabled = true;
+  setAdminAuthStatus('جارٍ التحقق من الحساب…');
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    if (!(await checkCurrentUserIsAdmin())) {
+      await db.auth.signOut();
+      setAdminAuthStatus('هذا الحساب غير مضاف كحساب إداري. أضف معرّفه إلى قائمة الإدارة في Supabase.', true);
+      return;
+    }
+    window.siteAdminAuthorized = true;
+    await Promise.all([loadOrders(), loadSavedWeights()]);
+    passwordInput.value = '';
+    closeAdminLogin();
+    switchPage('orders');
+    renderSavedWeights();
+  } catch (error) {
+    console.error('Admin sign-in failed:', error);
+    const message = /is_current_user_site_admin|function.*does not exist/i.test(error?.message || '')
+      ? 'إعداد الحماية لم يكتمل بعد. شغّل ملف SQL الأمني في Supabase أولاً.'
+      : 'تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.';
+    setAdminAuthStatus(message, true);
+  } finally {
+    submit.disabled = false;
+  }
+});
+
+document.getElementById('adminLoginCancel')?.addEventListener('click', closeAdminLogin);
+document.getElementById('adminAuthModal')?.addEventListener('click', event => {
+  if (event.target.id === 'adminAuthModal') closeAdminLogin();
+});
+document.getElementById('adminLogoutBtn')?.addEventListener('click', async () => {
+  await db.auth.signOut();
+  window.siteAdminAuthorized = false;
+  state.orders = [];
+  state.savedWeights = [];
+  resetOrderForm();
+  switchPage('calculator');
+  renderSavedWeights();
+  renderSavedWeightsFileStatus();
+  toast('تم تسجيل الخروج من الإدارة');
+});
+
+db.auth.onAuthStateChange(event => {
+  if (event !== 'SIGNED_OUT') return;
+  window.siteAdminAuthorized = false;
+  state.orders = [];
+  state.savedWeights = [];
+  resetOrderForm();
+  renderOrders();
+  renderSavedWeights();
+  renderSavedWeightsFileStatus();
+});
+
+function requireSiteAdminAccess() {
+  if (!window.siteAdminAuthorized) throw new Error('يتطلب هذا الإجراء تسجيل الدخول الإداري.');
+}
+
 // All shipping-layer business logic (repository, provider, calculator,
 // cache, health check, retry strategy) now lives in src/shipping/ and is
 // loaded via the <script type="module"> block at the end of this file,
@@ -8730,6 +8888,10 @@ window.db = db;
    derived from the rows returned here. */
 
 async function loadOrders() {
+  if (!window.siteAdminAuthorized) {
+    state.orders = [];
+    return;
+  }
   const { data, error } = await db
     .from('orders')
     .select('*')
@@ -8745,6 +8907,7 @@ async function loadOrders() {
 }
 
 async function createOrder(order) {
+  requireSiteAdminAccess();
   const { data, error } = await db
     .from('orders')
     .insert([{ payload: order }])
@@ -8760,6 +8923,7 @@ async function createOrder(order) {
 }
 
 async function updateOrder(order) {
+  requireSiteAdminAccess();
   const { data, error } = await db
     .from('orders')
     .update({ payload: order, updated_at: new Date().toISOString() })
@@ -8776,6 +8940,7 @@ async function updateOrder(order) {
 }
 
 async function deleteOrder(id) {
+  requireSiteAdminAccess();
   const { error } = await db
     .from('orders')
     .delete()
@@ -8793,6 +8958,10 @@ async function deleteOrder(id) {
    against state.savedWeights -- see findSavedWeightMatch(). */
 
 async function loadSavedWeights() {
+  if (!window.siteAdminAuthorized) {
+    state.savedWeights = [];
+    return;
+  }
   const { data, error } = await db
     .from('product_weights')
     .select('*')
@@ -8814,6 +8983,7 @@ async function loadSavedWeights() {
 }
 
 async function createSavedWeightRow({ url, name, weight }) {
+  requireSiteAdminAccess();
   const { data, error } = await db
     .from('product_weights')
     .insert([{ product_url: url, product_name: name, weight_lb: weight }])
@@ -8829,6 +8999,7 @@ async function createSavedWeightRow({ url, name, weight }) {
 }
 
 async function updateSavedWeightRow(id, { url, name, weight }) {
+  requireSiteAdminAccess();
   const { data, error } = await db
     .from('product_weights')
     .update({ product_url: url, product_name: name, weight_lb: weight, updated_at: new Date().toISOString() })
@@ -8845,6 +9016,7 @@ async function updateSavedWeightRow(id, { url, name, weight }) {
 }
 
 async function deleteSavedWeightRow(id) {
+  requireSiteAdminAccess();
   const { error } = await db
     .from('product_weights')
     .delete()
@@ -8888,8 +9060,7 @@ async function deleteSavedWeightRow(id) {
   async function initApp() {
 
   await Promise.all([
-    loadOrders(),
-    loadSavedWeights(),
+    restoreSiteAdminSession(),
     ShippingProvider.boot(shippingPairsToPreload()),
   ]);
 
@@ -8902,24 +9073,14 @@ async function deleteSavedWeightRow(id) {
 // initApp()'s body above still just references the bare global `ShippingProvider`;
 // JS resolves that at call time, so this ordering is safe.
 
-console.log("Supabase Connected", db);
 </script>
 
 <script type="module">
-
-console.log("MODULE START");
-
 import { ShippingProvider as ShippingProviderClass } from './src/shipping/index.js';
-
-console.log("IMPORT OK");
 
 window.ShippingProvider = new ShippingProviderClass(window.db);
 
-console.log("INSTANCE CREATED", window.ShippingProvider);
-
 window.initApp();
-
-console.log("INIT DONE");
 
 </script>
 

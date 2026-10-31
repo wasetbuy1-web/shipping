@@ -1,1 +1,7 @@
 .vscode/cruise/
+.env
+.env.*
+!.env.example
+**/settings.local.json
+**/*.backup
+**/*backup*.html

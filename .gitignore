@@ -5,3 +5,6 @@
 **/settings.local.json
 **/*.backup
 **/*backup*.html
+/متجر-الشنط/
+/sql/008_import_bag_catalog_pre_tax_20261030.sql
+/sql/009_add_bag_catalog_second_image.sql
